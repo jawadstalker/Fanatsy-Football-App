@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Multi League Fantasy",
+    "slug": "fantasy-multi-league-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0D1512"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0D1512"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+node_modules/
+.expo/
+dist/
+web-build/
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# Xcode / Android build artifacts
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+npm-debug.*
+yarn-error.*
