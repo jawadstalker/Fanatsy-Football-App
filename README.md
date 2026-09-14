@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="logo.png" alt="NeuroLia Logo" width="180"/>
+</p>
+
+
 # Multi League Fantasy
 
 A cross-league fantasy football app covering the Premier League, La Liga,
