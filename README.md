@@ -20,8 +20,20 @@ Built with Expo, TypeScript, and NativeWind (Tailwind for React Native).
 - Player detail view: tap any player to see season stats, a
   current-gameweek points breakdown, and a bar chart of their last five
   gameweeks
-- Captain selection, with the armband automatically passed to a
-  substitute if the captain is benched
+- Captain and vice-captain selection: tap the star to set captain, long-press
+  a starting player to set vice-captain. If the captain scores 0 points, the
+  armband effect automatically passes to the vice-captain
+- FPL-style chips — Wildcard (free transfers with no points hit), Bench Boost
+  (bench points count toward the gameweek total), and Triple Captain
+  (captain scores 3x instead of 2x) — one active at a time
+- A gameweek deadline that locks transfers, captaincy, substitutions, and
+  chips once matches begin
+- Squad and transfer state persisted locally with AsyncStorage, so it
+  survives an app restart
+- A live fixtures/results screen, filterable by league, with the same
+  live-data-with-sample-fallback pattern as the transfer market
+- Private mini-leagues: create or join one by code, submit your weekly
+  points, and see live standings — backed by the server in `server/`
 - A scoring engine that mirrors FPL's rules (minutes played, goals
   weighted by position, assists, clean sheets, saves, penalties,
   cards, own goals) and a pipeline that scores a real fixture from
@@ -58,8 +70,12 @@ src/
     useAppFonts.ts             Loads the Oswald and Vazirmatn font families
   lib/
     formation.ts               Formation validation and pitch-layout math
+  config/
+    gameweek.ts                 Current gameweek number and transfer deadline
+    backend.ts                   Optional backend URL for private leagues
   data/
     sample.ts                  Sample squad, bench, market, and leaderboard data
+    sampleFixtures.ts           Sample fixtures used without an API key
     playerStats.ts              Sample season stats backing the player detail view
   api/
     config.ts                   API-Football key/base URL
@@ -68,21 +84,25 @@ src/
     client.ts                   Authenticated fetch wrapper
     players.ts                  Fetches a league's players
     fixtures.ts                 Fetches a fixture's score and player stats
+    leagueFixtures.ts            Fetches a league's recent + upcoming fixtures
     mapMatchStats.ts             Maps a fixture's raw stats to the scoring engine's input
     mappers.ts                   Maps raw player data to the app's MarketPlayer shape
     teamFixtures.ts              Looks up a club's most recent fixture
+    backendClient.ts             Client for the private-leagues backend in /server
   scoring/
     calculatePoints.ts           Pure FPL-style scoring function
     calculateFixturePoints.ts     Scores every player in one fixture
   store/
     useTeamStore.ts               Squad, transfers, captaincy, and budget state
+    useLeagueStore.ts              Private-league membership and standings
   hooks/
     usePlayers.ts                 Live transfer-market data with sample-data fallback
+    useLeagueFixtures.ts           Live fixtures with sample-data fallback
     useGameweekSync.ts            Syncs squad points from live fixtures
     useFixturePoints.ts            Scores a single fixture on demand
   components/                     PlayerChip, TopBar, LeagueChip, DraggableBenchCard,
-                                   PlayerDetailModal
-  screens/                        SquadScreen, TransfersScreen, LeagueScreen
+                                   PlayerDetailModal, LeagueSetupForm
+  screens/                        SquadScreen, TransfersScreen, FixturesScreen, LeagueScreen
   navigation/                     RootTabs, custom TabBar
 ```
 
@@ -148,20 +168,79 @@ and drag a bench player onto the pitch, and releasing near a starting
 player attempts to swap them in. A quick tap without dragging opens
 the player detail view instead.
 
+## Gameweek lifecycle
+
+`src/config/gameweek.ts` holds the current gameweek number and its
+transfer deadline (an ISO timestamp). `isGameweekLocked()` compares
+that deadline to the device clock; once it passes, the store rejects
+transfers, substitutions, captaincy changes, and chip activation.
+
+There's no scheduler that advances the gameweek automatically. On
+launch, `App.tsx` calls `syncGameweek(CURRENT_GAMEWEEK)`, which — if
+the config's gameweek number has increased since the app last ran —
+refills one free transfer, resets the weekly transfer count, and
+converts any active chip to "used". In production this config would
+come from a fixtures API instead of a hand-edited constant, and
+`syncGameweek` would run on a schedule (or whenever the app detects a
+new gameweek) rather than only on launch.
+
+## Chips
+
+Wildcard, Bench Boost, Triple Captain, and Free Hit live in the store's
+`chips` record, each with status `available`, `active`, or `used`. Only
+one can be active at a time; activating is blocked once the gameweek is
+locked, and an active chip becomes permanently `used` the next time
+`syncGameweek` runs. Free Hit additionally snapshots the squad when
+activated (`freeHitSnapshot`) and restores it — via `cancelChip` if you
+back out early, or automatically in `syncGameweek` once the gameweek
+ends — so its transfers only apply for that one gameweek.
+
+## Persistence
+
+Squad, captaincy, transfer counters, and chip state persist to
+`AsyncStorage` via Zustand's `persist` middleware (see
+`src/store/useTeamStore.ts`). Derived values (bank, squad value, points
+totals) are computed on read and aren't stored directly.
+
+## Private leagues (optional backend)
+
+By default the League tab shows a sample leaderboard. Setting
+`EXPO_PUBLIC_BACKEND_URL` (see `.env.example`) points it at the server
+in `server/` instead, unlocking:
+
+- Creating a private league (generates a short join code)
+- Joining one by code with a manager name
+- Submitting your current gameweek's points (from `useTeamStore`'s
+  `gameweekTotal`) and seeing live standings
+
+`useLeagueStore` persists which league/team you belong to locally
+(via AsyncStorage) and talks to the backend through
+`src/api/backendClient.ts`. There's no account system — membership is
+just "whoever has the join code and picks a manager name" — so treat
+this as a starting point for real authentication, not a finished
+multi-user system.
+
+## Testing
+
+`src/scoring/calculatePoints.ts` and `src/lib/formation.ts` are pure
+functions with no UI or API dependency, so they're covered by unit
+tests under their respective `__tests__` folders:
+
+```bash
+npm test
+```
+
 ## Suggested next steps
 
-1. Real backend for private leagues among friends, with account sync
-   across devices.
-2. Persist squad/transfer state locally (e.g. with AsyncStorage) so it
-   survives an app restart.
-3. Gameweek deadlines that lock transfers once matches begin.
-4. Vice-captain selection, and FPL-style chips (Wildcard, Bench Boost,
-   Triple Captain, Free Hit).
-5. A live fixtures/results screen.
-6. Unit tests for the scoring engine.
-7. For production, proxy RapidAPI requests through your own backend
+1. Real authentication for private leagues (the current join-code +
+   manager-name model has no account security).
+2. A production database for the backend instead of the single JSON
+   file in `server/src/store.ts`.
+3. For production, proxy RapidAPI requests through your own backend
    instead of calling it directly from the client, since
    `EXPO_PUBLIC_*` variables are visible in the compiled app bundle.
+4. Drive `CURRENT_GAMEWEEK`/`GAMEWEEK_DEADLINE` from a fixtures API
+   instead of a hand-edited constant.
 
 ## License
 

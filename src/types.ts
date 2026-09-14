@@ -44,6 +44,34 @@ export interface RankingRow {
   gw: number;
 }
 
+export type FixtureStatus = "scheduled" | "live" | "finished";
+
+export interface Fixture {
+  id: number;
+  league: LeagueId;
+  homeTeam: string;
+  awayTeam: string;
+  homeGoals: number | null;
+  awayGoals: number | null;
+  date: string; // ISO 8601
+  status: FixtureStatus;
+}
+
+// Shapes returned by the backend in /server — see server/src/store.ts.
+export interface BackendLeague {
+  code: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface BackendTeam {
+  id: string;
+  leagueCode: string;
+  managerName: string;
+  gwPoints: number;
+  totalPoints: number;
+}
+
 export interface SquadPlayer extends Player {
   isStarting: boolean;
   x?: number; // pitch position, only meaningful when isStarting
@@ -52,9 +80,12 @@ export interface SquadPlayer extends Player {
 
 export interface TransferResult {
   ok: boolean;
-  reason?: "exists" | "budget" | "no-replacement" | "full";
+  reason?: "exists" | "budget" | "no-replacement" | "full" | "locked";
   replaced?: string; // name of the player who was dropped, if any
 }
+
+export type ChipId = "wildcard" | "benchBoost" | "tripleCaptain" | "freeHit";
+export type ChipStatus = "available" | "active" | "used";
 
 export interface GwBreakdown {
   minutes: number;

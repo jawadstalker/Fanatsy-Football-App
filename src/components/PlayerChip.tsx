@@ -7,13 +7,17 @@ import { SquadPlayer } from "@/types";
 export function PlayerChip({
   p,
   isCaptain,
+  isViceCaptain,
   onPressCaptain,
+  onPressViceCaptain,
   onPress,
   highlight = false,
 }: {
   p: SquadPlayer;
   isCaptain: boolean;
+  isViceCaptain: boolean;
   onPressCaptain: () => void;
+  onPressViceCaptain: () => void;
   onPress: () => void;
   highlight?: boolean;
 }) {
@@ -27,7 +31,7 @@ export function PlayerChip({
       }}
     >
       <View className="relative">
-        <Pressable onPress={onPress}>
+        <Pressable onPress={onPress} onLongPress={onPressViceCaptain}>
           <View
             className="w-9 h-9 rounded-full items-center justify-center"
             style={{
@@ -47,6 +51,16 @@ export function PlayerChip({
         >
           <Star size={10} color={isCaptain ? colors.base : colors.muted} fill={isCaptain ? colors.base : "transparent"} />
         </Pressable>
+        {isViceCaptain && (
+          <View
+            className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full items-center justify-center border"
+            style={{ backgroundColor: colors.surface, borderColor: colors.turf }}
+          >
+            <Text className="text-[8px] font-display-bold" style={{ color: colors.turf }}>
+              VC
+            </Text>
+          </View>
+        )}
       </View>
       <Pressable onPress={onPress}>
         <View className="mt-1 px-1.5 py-0.5 rounded bg-surface">

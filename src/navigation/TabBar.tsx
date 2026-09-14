@@ -1,18 +1,20 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Shirt, Repeat, Trophy } from "lucide-react-native";
+import { Shirt, Repeat, Trophy, Calendar } from "lucide-react-native";
 import { colors } from "@/theme/tokens";
 
 const ICONS: Record<string, typeof Shirt> = {
   Squad: Shirt,
   Transfers: Repeat,
+  Fixtures: Calendar,
   League: Trophy,
 };
 
 const LABELS: Record<string, string> = {
   Squad: "Squad",
   Transfers: "Transfers",
+  Fixtures: "Fixtures",
   League: "My League",
 };
 

@@ -21,6 +21,7 @@ export function TransfersScreen() {
   const addPlayer = useTeamStore((s) => s.addPlayer);
   const isInSquad = useTeamStore((s) => s.isInSquad);
   const freeTransfers = useTeamStore((s) => s.freeTransfers);
+  const locked = useTeamStore((s) => s.isLocked());
 
   const handleAdd = (player: MarketPlayer) => {
     const result = addPlayer(player);
@@ -30,6 +31,8 @@ export function TransfersScreen() {
       setFeedback("Not enough budget");
     } else if (result.reason === "exists") {
       setFeedback("Already in your squad");
+    } else if (result.reason === "locked") {
+      setFeedback("Gameweek is locked — transfers reopen next gameweek");
     } else {
       setFeedback("No slot in this position");
     }
@@ -39,6 +42,14 @@ export function TransfersScreen() {
   return (
     <View className="flex-1">
       <TopBar title="Transfer Market" sub={`${freeTransfers} free transfers remaining`} />
+
+      {locked && (
+        <View className="mx-4 mb-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.elevated }}>
+          <Text className="text-[11px] font-body text-muted">
+            Gameweek is locked — transfers reopen once this gameweek ends
+          </Text>
+        </View>
+      )}
 
       {feedback && (
         <View className="mx-4 mb-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.elevated }}>
@@ -97,6 +108,7 @@ export function TransfersScreen() {
             <MarketRow
               player={item}
               inSquad={isInSquad(item.id)}
+              locked={locked}
               onAdd={() => handleAdd(item)}
               onPress={() => setSelected(item)}
             />
@@ -112,11 +124,13 @@ export function TransfersScreen() {
 function MarketRow({
   player: p,
   inSquad,
+  locked,
   onAdd,
   onPress,
 }: {
   player: MarketPlayer;
   inSquad: boolean;
+  locked: boolean;
   onAdd: () => void;
   onPress: () => void;
 }) {
@@ -149,11 +163,11 @@ function MarketRow({
         </View>
         <Pressable
           onPress={onAdd}
-          disabled={inSquad}
+          disabled={inSquad || locked}
           className="w-7 h-7 rounded-full items-center justify-center"
-          style={{ backgroundColor: inSquad ? colors.line : colors.turf }}
+          style={{ backgroundColor: inSquad || locked ? colors.line : colors.turf }}
         >
-          {inSquad ? <Check size={15} color={colors.muted} /> : <Plus size={15} color={colors.base} />}
+          {inSquad ? <Check size={15} color={colors.muted} /> : <Plus size={15} color={locked ? colors.muted : colors.base} />}
         </Pressable>
       </View>
     </Pressable>

@@ -1,5 +1,5 @@
 import "./global.css";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { View } from "react-native";
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -8,6 +8,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { RootTabs } from "@/navigation/RootTabs";
 import { useAppFonts } from "@/theme/useAppFonts";
 import { colors } from "@/theme/tokens";
+import { useTeamStore } from "@/store/useTeamStore";
+import { CURRENT_GAMEWEEK } from "@/config/gameweek";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,6 +27,11 @@ const navTheme = {
 
 export default function App() {
   const fontsLoaded = useAppFonts();
+  const syncGameweek = useTeamStore((s) => s.syncGameweek);
+
+  useEffect(() => {
+    syncGameweek(CURRENT_GAMEWEEK);
+  }, [syncGameweek]);
 
   const onLayout = useCallback(async () => {
     if (fontsLoaded) await SplashScreen.hideAsync();

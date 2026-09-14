@@ -8,20 +8,33 @@ import { PlayerDetailModal } from "@/components/PlayerDetailModal";
 import { colors } from "@/theme/tokens";
 import { useTeamStore } from "@/store/useTeamStore";
 import { useGameweekSync } from "@/hooks/useGameweekSync";
-import { SquadPlayer } from "@/types";
+import { ChipId, SquadPlayer } from "@/types";
 
 const PITCH_HEIGHT = 300;
 const STRIPE_COUNT = 9;
 
+const CHIP_LABELS: Record<ChipId, string> = {
+  wildcard: "Wildcard",
+  benchBoost: "Bench Boost",
+  tripleCaptain: "Triple Captain",
+  freeHit: "Free Hit",
+};
+
 export function SquadScreen() {
   const squad = useTeamStore((s) => s.squad);
   const captainId = useTeamStore((s) => s.captainId);
+  const viceCaptainId = useTeamStore((s) => s.viceCaptainId);
   const setCaptain = useTeamStore((s) => s.setCaptain);
+  const setViceCaptain = useTeamStore((s) => s.setViceCaptain);
   const removePlayer = useTeamStore((s) => s.removePlayer);
   const swapPlayers = useTeamStore((s) => s.swapPlayers);
   const bank = useTeamStore((s) => s.bank());
   const squadValue = useTeamStore((s) => s.squadValue());
   const gameweekTotal = useTeamStore((s) => s.gameweekTotal());
+  const chips = useTeamStore((s) => s.chips);
+  const activateChip = useTeamStore((s) => s.activateChip);
+  const cancelChip = useTeamStore((s) => s.cancelChip);
+  const locked = useTeamStore((s) => s.isLocked());
 
   const { sync, syncing, error } = useGameweekSync();
   const [dismissedError, setDismissedError] = useState(false);
@@ -38,6 +51,11 @@ export function SquadScreen() {
       setSubMessage(result.reason ?? "That swap isn't allowed");
       setTimeout(() => setSubMessage(null), 2500);
     }
+  };
+
+  const handleChipPress = (chip: ChipId) => {
+    if (chips[chip] === "active") cancelChip(chip);
+    else if (chips[chip] === "available") activateChip(chip);
   };
 
   return (
@@ -87,7 +105,43 @@ export function SquadScreen() {
           <Text className="text-[11px] font-body text-muted">{subMessage}</Text>
         </View>
       )}
+      {locked && (
+        <View className="mx-4 mb-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.elevated }}>
+          <Text className="text-[11px] font-body text-muted">
+            Gameweek is locked — transfers, captaincy, and chips reopen next gameweek
+          </Text>
+        </View>
+      )}
 
+      <View className="px-4 flex-row gap-2 mb-2">
+        {(Object.keys(chips) as ChipId[]).map((chip) => {
+          const status = chips[chip];
+          return (
+            <Pressable
+              key={chip}
+              onPress={() => handleChipPress(chip)}
+              disabled={locked || status === "used"}
+              className="flex-1 rounded-lg py-1.5 items-center border"
+              style={{
+                backgroundColor: status === "active" ? colors.turf : colors.surface,
+                borderColor: status === "active" ? colors.turf : colors.line,
+                opacity: status === "used" ? 0.4 : 1,
+              }}
+            >
+              <Text
+                className="text-[10px] font-body-medium"
+                style={{ color: status === "active" ? colors.base : colors.ink }}
+              >
+                {CHIP_LABELS[chip]}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Text className="text-xs font-body text-muted mx-4 mb-1.5">
+        Tap a player for details · star sets captain · long-press sets vice-captain
+      </Text>
       <View
         ref={pitchRef}
         collapsable={false}
@@ -124,7 +178,9 @@ export function SquadScreen() {
             key={p.id}
             p={p}
             isCaptain={p.id === captainId}
+            isViceCaptain={p.id === viceCaptainId}
             onPressCaptain={() => setCaptain(p.id)}
+            onPressViceCaptain={() => setViceCaptain(p.id)}
             onPress={() => setSelected(p)}
           />
         ))}
