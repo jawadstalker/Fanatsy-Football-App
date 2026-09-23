@@ -1,12 +1,9 @@
-// API-Football via RapidAPI. Get a key at:
-// https://rapidapi.com/api-sports/api/api-football
+// API-Football configuration.
 //
-// Set it as EXPO_PUBLIC_RAPIDAPI_KEY in a `.env` file at the project root
-// (see `.env.example`). Expo inlines EXPO_PUBLIC_* vars into the JS bundle
-// at build time — no extra config needed, but never put secrets that must
-// stay server-only behind this prefix. For a shipped app, proxy requests
-// through your own backend instead of calling RapidAPI directly from the
-// client, so the key isn't embedded in the app binary.
+// For production, set EXPO_PUBLIC_BACKEND_URL and let the Express server
+// proxy football requests. This keeps the RapidAPI key out of the app bundle.
+//
+// Direct RapidAPI access is retained only as a development fallback.
 
 export const API_HOST = "api-football-v1.p.rapidapi.com";
 export const API_BASE_URL = `https://${API_HOST}/v3`;
