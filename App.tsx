@@ -9,7 +9,8 @@ import { RootTabs } from "@/navigation/RootTabs";
 import { useAppFonts } from "@/theme/useAppFonts";
 import { colors } from "@/theme/tokens";
 import { useTeamStore } from "@/store/useTeamStore";
-import { CURRENT_GAMEWEEK } from "@/config/gameweek";
+import { CURRENT_GAMEWEEK, configureGameweek } from "@/config/gameweek";
+import { fetchGameweekConfig } from "@/api/gameweek";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,7 +31,22 @@ export default function App() {
   const syncGameweek = useTeamStore((s) => s.syncGameweek);
 
   useEffect(() => {
-    syncGameweek(CURRENT_GAMEWEEK);
+    let cancelled = false;
+
+    const sync = async () => {
+      try {
+        const remote = await fetchGameweekConfig();
+        if (!cancelled && remote) configureGameweek(remote);
+        if (!cancelled) syncGameweek(remote?.currentGameweek ?? CURRENT_GAMEWEEK);
+      } catch {
+        if (!cancelled) syncGameweek(CURRENT_GAMEWEEK);
+      }
+    };
+
+    sync();
+    return () => {
+      cancelled = true;
+    };
   }, [syncGameweek]);
 
   const onLayout = useCallback(async () => {
