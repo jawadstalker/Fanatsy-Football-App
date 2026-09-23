@@ -6,41 +6,50 @@ export const leaguesRouter = Router();
 
 leaguesRouter.post("/", (req, res) => {
   const { name } = req.body as { name?: string };
-  if (!name) return res.status(400).json({ error: "name is required" });
+  const normalized = name?.trim();
+  if (!normalized) return res.status(400).json({ error: "name is required" });
+  if (normalized.length > 40) return res.status(400).json({ error: "name must be 40 characters or fewer" });
 
   const code = nanoid(6).toUpperCase();
-  const league = createLeague(code, name);
-  res.status(201).json(league);
+  res.status(201).json(createLeague(code, normalized));
 });
 
 leaguesRouter.get("/:code", (req, res) => {
-  const league = getLeague(req.params.code);
+  const league = getLeague(req.params.code.toUpperCase());
   if (!league) return res.status(404).json({ error: "League not found" });
   res.json(league);
 });
 
 leaguesRouter.post("/:code/join", (req, res) => {
   const { managerName } = req.body as { managerName?: string };
-  if (!managerName) return res.status(400).json({ error: "managerName is required" });
+  const normalized = managerName?.trim();
+  if (!normalized) return res.status(400).json({ error: "managerName is required" });
+  if (normalized.length > 30) return res.status(400).json({ error: "managerName must be 30 characters or fewer" });
 
-  const league = getLeague(req.params.code);
-  if (!league) return res.status(404).json({ error: "League not found" });
+  const code = req.params.code.toUpperCase();
+  if (!getLeague(code)) return res.status(404).json({ error: "League not found" });
 
-  const team = joinLeague(nanoid(10), league.code, managerName);
-  res.status(201).json(team);
+  res.status(201).json(joinLeague(nanoid(10), code, normalized));
 });
 
 leaguesRouter.post("/:code/teams/:teamId/points", (req, res) => {
-  const { gwPoints } = req.body as { gwPoints?: number };
-  if (typeof gwPoints !== "number") return res.status(400).json({ error: "gwPoints must be a number" });
+  const { gameweek, gwPoints } = req.body as { gameweek?: number; gwPoints?: number };
+  if (!Number.isInteger(gameweek) || gameweek < 1 || gameweek > 100) {
+    return res.status(400).json({ error: "gameweek must be an integer between 1 and 100" });
+  }
+  if (typeof gwPoints !== "number" || !Number.isFinite(gwPoints)) {
+    return res.status(400).json({ error: "gwPoints must be a finite number" });
+  }
 
-  const team = setTeamPoints(req.params.teamId, gwPoints);
-  if (!team) return res.status(404).json({ error: "Team not found" });
-  res.json(team);
+  const result = setTeamPoints(req.params.teamId, gameweek, gwPoints);
+  if (!result.team) return res.status(404).json({ error: "Team not found" });
+  if (result.duplicate) return res.status(409).json({ error: `Points already submitted for gameweek ${gameweek}`, team: result.team });
+
+  res.json(result.team);
 });
 
 leaguesRouter.get("/:code/standings", (req, res) => {
-  const league = getLeague(req.params.code);
-  if (!league) return res.status(404).json({ error: "League not found" });
-  res.json(getStandings(req.params.code));
+  const code = req.params.code.toUpperCase();
+  if (!getLeague(code)) return res.status(404).json({ error: "League not found" });
+  res.json(getStandings(code));
 });
