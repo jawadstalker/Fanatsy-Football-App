@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as backend from "@/api/backendClient";
 import { BackendTeam } from "@/types";
+import { CURRENT_GAMEWEEK } from "@/config/gameweek";
 
 interface LeagueState {
   managerName: string | null;
@@ -89,7 +90,7 @@ export const useLeagueStore = create<LeagueState>()(
         if (!leagueCode || !teamId) return;
         set({ loading: true, error: null });
         try {
-          await backend.submitPoints(leagueCode, teamId, gwPoints);
+          await backend.submitPoints(leagueCode, teamId, CURRENT_GAMEWEEK, gwPoints);
           const standings = await backend.getStandings(leagueCode);
           set({ standings, loading: false });
         } catch (err) {
