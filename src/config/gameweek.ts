@@ -1,10 +1,32 @@
-// Update these before each gameweek (e.g. from a fixtures API, or by hand).
-export const CURRENT_GAMEWEEK = 6;
+export interface GameweekConfig {
+  currentGameweek: number;
+  deadline: string;
+}
 
-// ISO 8601. Transfers, captaincy, substitutions, and chips lock once this
-// passes, matching how FPL locks squads at kickoff of the gameweek's first match.
-export const GAMEWEEK_DEADLINE = "2026-09-20T10:30:00Z";
+// Fallback values are used only while the app is offline or before the
+// backend metadata request completes.
+let currentConfig: GameweekConfig = {
+  currentGameweek: 6,
+  deadline: "2026-09-20T10:30:00Z",
+};
+
+export const CURRENT_GAMEWEEK = currentConfig.currentGameweek;
+
+export function getGameweekConfig(): GameweekConfig {
+  return currentConfig;
+}
+
+export function configureGameweek(config: GameweekConfig): void {
+  if (!Number.isInteger(config.currentGameweek) || config.currentGameweek < 1) return;
+  const deadlineMs = new Date(config.deadline).getTime();
+  if (!Number.isFinite(deadlineMs)) return;
+
+  currentConfig = {
+    currentGameweek: config.currentGameweek,
+    deadline: config.deadline,
+  };
+}
 
 export function isGameweekLocked(): boolean {
-  return Date.now() > new Date(GAMEWEEK_DEADLINE).getTime();
+  return Date.now() > new Date(currentConfig.deadline).getTime();
 }
