@@ -11,4 +11,4 @@ export const LEAGUE_API_IDS: Record<LeagueId, number> = {
 };
 
 // Update at the start of each season (e.g. 2026 for the 2026/27 season).
-export const CURRENT_SEASON = 2025;
+export const CURRENT_SEASON = 2026;
