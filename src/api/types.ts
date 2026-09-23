@@ -51,7 +51,7 @@ export interface ApiFixtureTeam {
 }
 
 export interface ApiFixtureEntry {
-  fixture: { id: number; date: string; status: { short: string } };
+  fixture: { id: number; date: string; status: { short: string }; round?: string | null };
   teams: { home: ApiFixtureTeam; away: ApiFixtureTeam };
   goals: { home: number | null; away: number | null };
 }
