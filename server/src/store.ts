@@ -61,12 +61,13 @@ export function getLeague(code: string): League | null {
   return readDb().leagues[code] ?? null;
 }
 
-export function joinLeague(id: string, leagueCode: string, managerName: string): Team {
+export function joinLeague(id: string, leagueCode: string, managerName: string, userId: string): Team {
   const db = readDb();
   const team: Team = {
     id,
     leagueCode,
     managerName: managerName.trim(),
+    userId,
     gwPoints: 0,
     totalPoints: 0,
     submittedGameweeks: [],
