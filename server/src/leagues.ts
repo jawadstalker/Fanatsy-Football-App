@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { nanoid } from "nanoid";
 import { createLeague, getLeague, joinLeague, setTeamPoints, getStandings } from "./store";
+import { requireAuth } from "./auth";
 
 export const leaguesRouter = Router();
 
-leaguesRouter.post("/", (req, res) => {
+leaguesRouter.post("/", requireAuth, (req, res) => {
   const { name } = req.body as { name?: string };
   const normalized = name?.trim();
   if (!normalized) return res.status(400).json({ error: "name is required" });
@@ -20,7 +21,7 @@ leaguesRouter.get("/:code", (req, res) => {
   res.json(league);
 });
 
-leaguesRouter.post("/:code/join", (req, res) => {
+leaguesRouter.post("/:code/join", requireAuth, (req, res) => {
   const { managerName } = req.body as { managerName?: string };
   const normalized = managerName?.trim();
   if (!normalized) return res.status(400).json({ error: "managerName is required" });
@@ -32,7 +33,7 @@ leaguesRouter.post("/:code/join", (req, res) => {
   res.status(201).json(joinLeague(nanoid(10), code, normalized));
 });
 
-leaguesRouter.post("/:code/teams/:teamId/points", (req, res) => {
+leaguesRouter.post("/:code/teams/:teamId/points", requireAuth, (req, res) => {
   const { gameweek, gwPoints } = req.body as { gameweek?: number; gwPoints?: number };
   if (!Number.isInteger(gameweek) || gameweek < 1 || gameweek > 100) {
     return res.status(400).json({ error: "gameweek must be an integer between 1 and 100" });
