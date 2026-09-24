@@ -5,7 +5,7 @@ import { STARTING, BENCH } from "@/data/sample";
 import { MarketPlayer, SquadPlayer, TransferResult, ChipId, ChipStatus } from "@/types";
 import { PlayerFixturePoints } from "@/scoring/calculateFixturePoints";
 import { assignPitchCoordinates, isValidFormation, FormationCheck } from "@/lib/formation";
-import { isGameweekLocked, CURRENT_GAMEWEEK } from "@/config/gameweek";
+import { isGameweekLocked, getCurrentGameweek } from "@/config/gameweek";
 
 export const TOTAL_BUDGET = 105.0;
 const INITIAL_FREE_TRANSFERS = 2;
@@ -95,7 +95,7 @@ export const useTeamStore = create<TeamState>()(
         tripleCaptain: "available",
         freeHit: "available",
       },
-      lastSeenGameweek: CURRENT_GAMEWEEK,
+      lastSeenGameweek: getCurrentGameweek(),
       freeHitSnapshot: null,
 
       isLocked: () => isGameweekLocked(),
