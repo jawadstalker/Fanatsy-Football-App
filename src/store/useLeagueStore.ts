@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as backend from "@/api/backendClient";
 import { BackendTeam } from "@/types";
 import { CURRENT_GAMEWEEK } from "@/config/gameweek";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface LeagueState {
   managerName: string | null;
@@ -33,10 +34,12 @@ export const useLeagueStore = create<LeagueState>()(
       error: null,
 
       createLeague: async (leagueName, managerName) => {
+        const token = useAuthStore.getState().token;
+        if (!token) { set({ error: "Please sign in first." }); return false; }
         set({ loading: true, error: null });
         try {
-          const league = await backend.createLeague(leagueName);
-          const team = await backend.joinLeague(league.code, managerName);
+          const league = await backend.createLeague(leagueName, token);
+          const team = await backend.joinLeague(league.code, managerName, token);
           set({
             leagueCode: league.code,
             leagueName: league.name,
@@ -53,11 +56,13 @@ export const useLeagueStore = create<LeagueState>()(
       },
 
       joinLeague: async (code, managerName) => {
+        const token = useAuthStore.getState().token;
+        if (!token) { set({ error: "Please sign in first." }); return false; }
         set({ loading: true, error: null });
         try {
-          const league = await backend.getLeague(code);
-          const team = await backend.joinLeague(code, managerName);
-          const standings = await backend.getStandings(code);
+          const league = await backend.getLeague(code, token);
+          const team = await backend.joinLeague(code, managerName, token);
+          const standings = await backend.getStandings(code, token);
           set({
             leagueCode: league.code,
             leagueName: league.name,
@@ -75,10 +80,11 @@ export const useLeagueStore = create<LeagueState>()(
 
       refreshStandings: async () => {
         const { leagueCode } = get();
-        if (!leagueCode) return;
+        const token = useAuthStore.getState().token;
+        if (!leagueCode || !token) return;
         set({ loading: true, error: null });
         try {
-          const standings = await backend.getStandings(leagueCode);
+          const standings = await backend.getStandings(leagueCode, token);
           set({ standings, loading: false });
         } catch (err) {
           set({ error: (err as Error).message, loading: false });
@@ -87,11 +93,12 @@ export const useLeagueStore = create<LeagueState>()(
 
       submitPoints: async (gwPoints) => {
         const { leagueCode, teamId } = get();
-        if (!leagueCode || !teamId) return;
+        const token = useAuthStore.getState().token;
+        if (!leagueCode || !teamId || !token) return;
         set({ loading: true, error: null });
         try {
-          await backend.submitPoints(leagueCode, teamId, CURRENT_GAMEWEEK, gwPoints);
-          const standings = await backend.getStandings(leagueCode);
+          await backend.submitPoints(leagueCode, teamId, CURRENT_GAMEWEEK, gwPoints, token);
+          const standings = await backend.getStandings(leagueCode, token);
           set({ standings, loading: false });
         } catch (err) {
           set({ error: (err as Error).message, loading: false });
