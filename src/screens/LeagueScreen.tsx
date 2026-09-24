@@ -8,6 +8,7 @@ import { RANKINGS } from "@/data/sample";
 import { hasBackend } from "@/config/backend";
 import { useLeagueStore } from "@/store/useLeagueStore";
 import { useTeamStore } from "@/store/useTeamStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { RankingRow, BackendTeam } from "@/types";
 
 export function LeagueScreen() {
@@ -68,6 +69,13 @@ function RealLeagueView() {
   const [mode, setMode] = useState<"create" | "join">("join");
   const league = useLeagueStore();
   const gameweekTotal = useTeamStore((s) => s.gameweekTotal());
+  const username = useAuthStore((s) => s.username);
+  const authLoading = useAuthStore((s) => s.loading);
+  const logout = useAuthStore((s) => s.logout);
+
+  if (!useAuthStore.getState().token) {
+    return <AuthLeagueView />;
+  }
 
   if (!league.leagueCode) {
     return (
@@ -107,6 +115,10 @@ function RealLeagueView() {
   return (
     <View className="flex-1">
       <TopBar title={league.leagueName ?? "My League"} sub={`Playing as ${league.managerName}`} />
+      <Pressable onPress={logout} disabled={authLoading} className="mx-4 mb-3 flex-row items-center justify-center gap-2">
+        <LogOut size={13} color={colors.muted} />
+        <Text className="text-[11px] font-body text-muted">Sign out {username ? `(${username})` : ""}</Text>
+      </Pressable>
 
       <Pressable
         className="mx-4 mb-3 px-3 py-2 rounded-lg flex-row items-center justify-between border"
