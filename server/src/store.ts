@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 
+export interface User { id: string; username: string; passwordHash: string; createdAt: string; }
+
 export interface League {
   code: string;
   name: string;
@@ -19,16 +21,17 @@ export interface Team {
 interface DbShape {
   leagues: Record<string, League>;
   teams: Record<string, Team>;
+  users: Record<string, User>;
 }
 
 const DATA_FILE = path.resolve(process.env.DATA_FILE ?? "./data.json");
 
 function readDb(): DbShape {
-  if (!fs.existsSync(DATA_FILE)) return { leagues: {}, teams: {} };
+  if (!fs.existsSync(DATA_FILE)) return { leagues: {}, teams: {}, users: {} };
   try {
     return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8")) as DbShape;
   } catch {
-    return { leagues: {}, teams: {} };
+    return { leagues: {}, teams: {}, users: {} };
   }
 }
 
