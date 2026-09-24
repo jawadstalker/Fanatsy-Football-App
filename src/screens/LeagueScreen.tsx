@@ -3,6 +3,7 @@ import { View, Text, FlatList, Pressable } from "react-native";
 import { ChevronUp, ChevronDown, Minus, Copy } from "lucide-react-native";
 import { TopBar } from "@/components/TopBar";
 import { LeagueSetupForm } from "@/components/LeagueSetupForm";
+import { AuthForm } from "@/components/AuthForm";
 import { colors } from "@/theme/tokens";
 import { RANKINGS } from "@/data/sample";
 import { hasBackend } from "@/config/backend";
@@ -14,6 +15,45 @@ import { RankingRow, BackendTeam } from "@/types";
 export function LeagueScreen() {
   if (!hasBackend()) return <SampleLeagueView />;
   return <RealLeagueView />;
+}
+
+function AuthLeagueView() {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const loading = useAuthStore((s) => s.loading);
+  const error = useAuthStore((s) => s.error);
+  const login = useAuthStore((s) => s.login);
+  const register = useAuthStore((s) => s.register);
+
+  return (
+    <View className="flex-1">
+      <TopBar title="My League" sub="Sign in to create or join a private league" />
+      <View className="flex-row px-4 gap-2 mb-4">
+        {(["login", "register"] as const).map((m) => (
+          <Pressable
+            key={m}
+            onPress={() => setMode(m)}
+            className="flex-1 rounded-lg py-2 items-center border"
+            style={{
+              backgroundColor: mode === m ? colors.elevated : colors.surface,
+              borderColor: mode === m ? colors.turf : colors.line,
+            }}
+          >
+            <Text className="text-xs font-body-medium text-ink">
+              {m === "login" ? "Sign in" : "Create account"}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      <AuthForm
+        mode={mode}
+        loading={loading}
+        error={error}
+        onSubmit={(username, password) =>
+          mode === "login" ? login(username, password) : register(username, password)
+        }
+      />
+    </View>
+  );
 }
 
 // Shown when EXPO_PUBLIC_BACKEND_URL isn't set — same as before, but
@@ -70,10 +110,11 @@ function RealLeagueView() {
   const league = useLeagueStore();
   const gameweekTotal = useTeamStore((s) => s.gameweekTotal());
   const username = useAuthStore((s) => s.username);
+  const token = useAuthStore((s) => s.token);
   const authLoading = useAuthStore((s) => s.loading);
   const logout = useAuthStore((s) => s.logout);
 
-  if (!useAuthStore.getState().token) {
+  if (!token) {
     return <AuthLeagueView />;
   }
 
