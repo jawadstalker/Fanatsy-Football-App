@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchPlayersByLeague } from "@/api/players";
 import { mapPlayersResponse } from "@/api/mappers";
-import { hasApiKey } from "@/api/config";
+import { hasFootballBackend } from "@/api/client";
 import { MARKET } from "@/data/sample";
 import { LeagueId, MarketPlayer } from "@/types";
 
@@ -23,11 +23,11 @@ export function usePlayers(league: LeagueId): UsePlayersResult {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [usingSampleData, setUsingSampleData] = useState(!hasApiKey());
+  const [usingSampleData, setUsingSampleData] = useState(!hasFootballBackend());
   const requestId = useRef(0);
 
   const load = () => {
-    if (!hasApiKey()) {
+    if (!hasFootballBackend()) {
       setUsingSampleData(true);
       setPlayers(MARKET.filter((p) => p.league === league));
       return;
