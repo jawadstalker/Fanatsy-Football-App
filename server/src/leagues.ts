@@ -30,7 +30,7 @@ leaguesRouter.post("/:code/join", requireAuth, (req, res) => {
   const code = req.params.code.toUpperCase();
   if (!getLeague(code)) return res.status(404).json({ error: "League not found" });
 
-  res.status(201).json(joinLeague(nanoid(10), code, normalized));
+  res.status(201).json(joinLeague(nanoid(10), code, normalized, req.userId!));
 });
 
 leaguesRouter.post("/:code/teams/:teamId/points", requireAuth, (req, res) => {
@@ -41,6 +41,9 @@ leaguesRouter.post("/:code/teams/:teamId/points", requireAuth, (req, res) => {
   if (typeof gwPoints !== "number" || !Number.isFinite(gwPoints)) {
     return res.status(400).json({ error: "gwPoints must be a finite number" });
   }
+
+  const currentTeam = getStandings(req.params.code.toUpperCase()).find((team) => team.id === req.params.teamId);
+  if (!currentTeam || currentTeam.userId !== req.userId) return res.status(403).json({ error: "You do not own this team" });
 
   const result = setTeamPoints(req.params.teamId, gameweek, gwPoints);
   if (!result.team) return res.status(404).json({ error: "Team not found" });
