@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
-import { ChevronUp, ChevronDown, Minus, Copy } from "lucide-react-native";
+import { ChevronUp, ChevronDown, Minus, Copy, LogOut } from "lucide-react-native";
 import { TopBar } from "@/components/TopBar";
 import { LeagueSetupForm } from "@/components/LeagueSetupForm";
 import { AuthForm } from "@/components/AuthForm";
