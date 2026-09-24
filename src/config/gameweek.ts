@@ -12,6 +12,10 @@ let currentConfig: GameweekConfig = {
 
 export const CURRENT_GAMEWEEK = currentConfig.currentGameweek;
 
+export function getCurrentGameweek(): number {
+  return currentConfig.currentGameweek;
+}
+
 export function getGameweekConfig(): GameweekConfig {
   return currentConfig;
 }
