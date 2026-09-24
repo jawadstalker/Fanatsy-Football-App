@@ -64,10 +64,13 @@ export interface BackendLeague {
   createdAt: string;
 }
 
+export interface BackendUser { id: string; username: string; token: string; }
+
 export interface BackendTeam {
   id: string;
   leagueCode: string;
   managerName: string;
+  userId?: string;
   gwPoints: number;
   totalPoints: number;
 }
