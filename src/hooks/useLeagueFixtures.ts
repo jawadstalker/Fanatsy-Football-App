@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchLeagueFixtures } from "@/api/leagueFixtures";
-import { hasApiKey } from "@/api/config";
+import { hasFootballBackend } from "@/api/client";
 import { SAMPLE_FIXTURES } from "@/data/sampleFixtures";
 import { Fixture, LeagueId } from "@/types";
 
@@ -21,10 +21,10 @@ export function useLeagueFixtures(league: LeagueId): UseFixturesResult {
   const [fixtures, setFixtures] = useState<Fixture[]>(() => cache.get(league) ?? sampleForLeague());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [usingSampleData, setUsingSampleData] = useState(!hasApiKey());
+  const [usingSampleData, setUsingSampleData] = useState(!hasFootballBackend());
 
   const load = () => {
-    if (!hasApiKey()) {
+    if (!hasFootballBackend()) {
       setUsingSampleData(true);
       setFixtures(sampleForLeague());
       return;
