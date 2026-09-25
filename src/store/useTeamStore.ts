@@ -8,7 +8,8 @@ import { assignPitchCoordinates, isValidFormation, FormationCheck } from "@/lib/
 import { isGameweekLocked, getCurrentGameweek } from "@/config/gameweek";
 
 export const TOTAL_BUDGET = 105.0;
-const INITIAL_FREE_TRANSFERS = 2;
+const INITIAL_FREE_TRANSFERS = 1;
+const MAX_PLAYERS_PER_CLUB = 3;
 const LOCKED_RESULT: TransferResult = { ok: false, reason: "locked" };
 const LOCKED_FORMATION_CHECK: FormationCheck = { ok: false, reason: "Gameweek is locked" };
 
@@ -106,7 +107,7 @@ export const useTeamStore = create<TeamState>()(
       pointsHit: () => {
         const { chips } = get();
         if (chips.wildcard === "active" || chips.freeHit === "active") return 0;
-        return Math.max(0, get().transfersMadeThisWeek - INITIAL_FREE_TRANSFERS) * 4;
+        return Math.max(0, get().transfersMadeThisWeek - get().freeTransfers - 1) * 4;
       },
 
       isInSquad: (playerId) => get().squad.some((p) => p.id === playerId),
@@ -133,6 +134,8 @@ export const useTeamStore = create<TeamState>()(
       addPlayer: (market) => {
         if (isGameweekLocked()) return LOCKED_RESULT;
         const { squad, bank, chips } = get();
+        const clubCount = squad.filter((p) => (p.clubId ?? p.club) === (market.clubId ?? market.club)).length;
+        if (clubCount >= MAX_PLAYERS_PER_CLUB) return { ok: false, reason: "full" };
 
         if (squad.some((p) => p.id === market.id)) return { ok: false, reason: "exists" };
 
@@ -285,7 +288,7 @@ export const useTeamStore = create<TeamState>()(
         const update: Partial<TeamState> = {
           lastSeenGameweek: currentGameweek,
           transfersMadeThisWeek: 0,
-          freeTransfers: Math.min(freeTransfers + 1, INITIAL_FREE_TRANSFERS),
+          freeTransfers: Math.min(freeTransfers + 1, INITIAL_FREE_TRANSFERS + 1),
           chips: rolledChips,
         };
 
