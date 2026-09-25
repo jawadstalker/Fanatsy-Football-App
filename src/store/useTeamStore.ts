@@ -67,7 +67,7 @@ interface TeamState {
   isInSquad: (playerId: number) => boolean;
   isLocked: () => boolean;
 
-  addPlayer: (market: MarketPlayer) => TransferResult;
+  addPlayer: (market: MarketPlayer, replacePlayerId?: number) => TransferResult;
   removePlayer: (playerId: number) => void;
   setCaptain: (playerId: number) => void;
   setViceCaptain: (playerId: number) => void;
@@ -131,13 +131,13 @@ export const useTeamStore = create<TeamState>()(
         return raw - pointsHit();
       },
 
-      addPlayer: (market) => {
+      addPlayer: (market, replacePlayerId) => {
         if (isGameweekLocked()) return LOCKED_RESULT;
         const { squad, bank, chips } = get();
+        if (squad.some((p) => p.id === market.id)) return { ok: false, reason: "exists" };
+
         const clubCount = squad.filter((p) => (p.clubId ?? p.club) === (market.clubId ?? market.club)).length;
         if (clubCount >= MAX_PLAYERS_PER_CLUB) return { ok: false, reason: "full" };
-
-        if (squad.some((p) => p.id === market.id)) return { ok: false, reason: "exists" };
 
         const unlimitedTransfers = chips.wildcard === "active" || chips.freeHit === "active";
 
@@ -151,29 +151,26 @@ export const useTeamStore = create<TeamState>()(
           return { ok: true };
         }
 
-        const candidate = squad
-          .filter((p) => p.pos === market.pos)
-          .sort((a, b) => a.price - b.price)[0];
-        if (!candidate) return { ok: false, reason: "no-replacement" };
+        if (replacePlayerId == null) return { ok: false, reason: "no-replacement" };
+        const outgoing = squad.find((p) => p.id === replacePlayerId);
+        if (!outgoing) return { ok: false, reason: "no-replacement" };
+        if (outgoing.pos !== market.pos) return { ok: false, reason: "no-replacement" };
 
-        const cost = market.price - candidate.price;
+        const cost = market.price - outgoing.price;
         if (bank() < cost) return { ok: false, reason: "budget" };
 
         set((s) => ({
-          squad: relayout(
-            s.squad.map((p) =>
-              p.id === candidate.id
-                ? toSquadPlayer(market, { isStarting: candidate.isStarting, x: candidate.x, y: candidate.y })
-                : p
-            )
-          ),
+          squad: relayout(s.squad.map((p) =>
+            p.id === outgoing.id
+              ? toSquadPlayer(market, { isStarting: outgoing.isStarting, x: outgoing.x, y: outgoing.y })
+              : p
+          )),
           transfersMadeThisWeek: unlimitedTransfers ? s.transfersMadeThisWeek : s.transfersMadeThisWeek + 1,
           freeTransfers: unlimitedTransfers ? s.freeTransfers : Math.max(0, s.freeTransfers - 1),
-          captainId: s.captainId === candidate.id ? market.id : s.captainId,
-          viceCaptainId: s.viceCaptainId === candidate.id ? market.id : s.viceCaptainId,
+          captainId: s.captainId === outgoing.id ? market.id : s.captainId,
+          viceCaptainId: s.viceCaptainId === outgoing.id ? market.id : s.viceCaptainId,
         }));
-
-        return { ok: true, replaced: candidate.name };
+        return { ok: true, replaced: outgoing.name };
       },
 
       removePlayer: (playerId) => {
