@@ -16,6 +16,7 @@ export interface Team {
   gwPoints: number;
   totalPoints: number;
   submittedGameweeks: number[];
+  userId?: string;
 }
 
 interface DbShape {
@@ -63,6 +64,10 @@ export function getLeague(code: string): League | null {
 
 export function joinLeague(id: string, leagueCode: string, managerName: string, userId: string): Team {
   const db = readDb();
+  const existing = Object.values(db.teams).find(
+    (team) => team.leagueCode === leagueCode && team.userId === userId
+  );
+  if (existing) return normalizeTeam(existing);
   const team: Team = {
     id,
     leagueCode,
