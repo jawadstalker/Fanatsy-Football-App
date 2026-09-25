@@ -107,7 +107,7 @@ export const useTeamStore = create<TeamState>()(
       pointsHit: () => {
         const { chips } = get();
         if (chips.wildcard === "active" || chips.freeHit === "active") return 0;
-        return Math.max(0, get().transfersMadeThisWeek - get().freeTransfers - 1) * 4;
+        return Math.max(0, get().transfersMadeThisWeek - INITIAL_FREE_TRANSFERS) * 4;
       },
 
       isInSquad: (playerId) => get().squad.some((p) => p.id === playerId),
