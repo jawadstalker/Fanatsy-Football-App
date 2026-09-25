@@ -85,6 +85,7 @@ export interface TransferResult {
   ok: boolean;
   reason?: "exists" | "budget" | "no-replacement" | "full" | "locked";
   replaced?: string; // name of the player who was dropped, if any
+  reason?: "exists" | "budget" | "no-replacement" | "full" | "locked";
 }
 
 export type ChipId = "wildcard" | "benchBoost" | "tripleCaptain" | "freeHit";
