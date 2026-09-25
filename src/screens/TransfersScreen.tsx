@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, FlatList, ScrollView, Pressable, ActivityIndicator } from "react-native";
-import { Search, Shirt, Plus, Check } from "lucide-react-native";
+import { Search, Shirt, Plus, Check, ArrowLeftRight } from "lucide-react-native";
 import { TopBar } from "@/components/TopBar";
 import { AllLeaguesChip, LeagueChip } from "@/components/LeagueChip";
 import { PlayerDetailModal, DetailPlayer } from "@/components/PlayerDetailModal";
@@ -14,19 +14,22 @@ export function TransfersScreen() {
   const [active, setActive] = useState<LeagueId | "all">("all");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selected, setSelected] = useState<DetailPlayer | null>(null);
+  const [outgoingId, setOutgoingId] = useState<number | null>(null);
 
   const live = usePlayers(active === "all" ? "epl" : active);
   const players: MarketPlayer[] = active === "all" ? MARKET : live.players;
 
   const addPlayer = useTeamStore((s) => s.addPlayer);
   const isInSquad = useTeamStore((s) => s.isInSquad);
+  const squad = useTeamStore((s) => s.squad);
   const freeTransfers = useTeamStore((s) => s.freeTransfers);
   const locked = useTeamStore((s) => s.isLocked());
 
   const handleAdd = (player: MarketPlayer) => {
-    const result = addPlayer(player);
+    const result = addPlayer(player, outgoingId ?? undefined);
     if (result.ok) {
       setFeedback(result.replaced ? `${player.name} replaced ${result.replaced}` : `${player.name} added`);
+      setOutgoingId(null);
     } else if (result.reason === "budget") {
       setFeedback("Not enough budget");
     } else if (result.reason === "exists") {
@@ -54,6 +57,31 @@ export function TransfersScreen() {
       {feedback && (
         <View className="mx-4 mb-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.elevated }}>
           <Text className="text-[11px] font-body text-ink">{feedback}</Text>
+        </View>
+      )}
+
+      {squad.length >= 15 && (
+        <View className="mx-4 mb-2 px-3 py-2 rounded-lg border" style={{ backgroundColor: colors.surface, borderColor: colors.line }}>
+          <View className="flex-row items-center gap-2 mb-2">
+            <ArrowLeftRight size={14} color={colors.turf} />
+            <Text className="text-xs font-body-medium text-ink">Select a player to sell</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            {squad.map((p) => (
+              <Pressable
+                key={p.id}
+                onPress={() => setOutgoingId(outgoingId === p.id ? null : p.id)}
+                className="px-2.5 py-1.5 rounded-lg border"
+                style={{
+                  backgroundColor: outgoingId === p.id ? colors.elevated : colors.base,
+                  borderColor: outgoingId === p.id ? colors.turf : colors.line,
+                }}
+              >
+                <Text className="text-[10px] font-body text-ink">{p.name}</Text>
+                <Text className="text-[9px] font-body text-muted">{p.pos} · €{p.price.toFixed(1)}m</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
       )}
 
@@ -108,6 +136,8 @@ export function TransfersScreen() {
             <MarketRow
               player={item}
               inSquad={isInSquad(item.id)}
+              outgoingId={outgoingId}
+              canReplace={outgoingId !== null && squad.some((p) => p.id === outgoingId && p.pos === item.pos)}
               locked={locked}
               onAdd={() => handleAdd(item)}
               onPress={() => setSelected(item)}
@@ -163,7 +193,7 @@ function MarketRow({
         </View>
         <Pressable
           onPress={onAdd}
-          disabled={inSquad || locked}
+          disabled={inSquad || locked || (outgoingId !== null && !canReplace)}
           className="w-7 h-7 rounded-full items-center justify-center"
           style={{ backgroundColor: inSquad || locked ? colors.line : colors.turf }}
         >
