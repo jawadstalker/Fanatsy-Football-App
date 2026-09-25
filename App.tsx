@@ -11,6 +11,7 @@ import { colors } from "@/theme/tokens";
 import { useTeamStore } from "@/store/useTeamStore";
 import { CURRENT_GAMEWEEK, configureGameweek } from "@/config/gameweek";
 import { fetchGameweekConfig } from "@/api/gameweek";
+import { useAuthStore } from "@/store/useAuthStore";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -29,6 +30,7 @@ const navTheme = {
 export default function App() {
   const fontsLoaded = useAppFonts();
   const syncGameweek = useTeamStore((s) => s.syncGameweek);
+  const restoreSession = useAuthStore((s) => s.restoreSession);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,11 +45,12 @@ export default function App() {
       }
     };
 
+    restoreSession();
     sync();
     return () => {
       cancelled = true;
     };
-  }, [syncGameweek]);
+  }, [restoreSession, syncGameweek]);
 
   const onLayout = useCallback(async () => {
     if (fontsLoaded) await SplashScreen.hideAsync();
