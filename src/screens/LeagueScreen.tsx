@@ -113,6 +113,7 @@ function RealLeagueView() {
   const token = useAuthStore((s) => s.token);
   const authLoading = useAuthStore((s) => s.loading);
   const logout = useAuthStore((s) => s.logout);
+  const leaveLeague = useLeagueStore((s) => s.leaveLeague);
 
   if (!token) {
     return <AuthLeagueView />;
@@ -156,7 +157,7 @@ function RealLeagueView() {
   return (
     <View className="flex-1">
       <TopBar title={league.leagueName ?? "My League"} sub={`Playing as ${league.managerName}`} />
-      <Pressable onPress={logout} disabled={authLoading} className="mx-4 mb-3 flex-row items-center justify-center gap-2">
+      <Pressable onPress={() => { leaveLeague(); logout(); }} disabled={authLoading} className="mx-4 mb-3 flex-row items-center justify-center gap-2">
         <LogOut size={13} color={colors.muted} />
         <Text className="text-[11px] font-body text-muted">Sign out {username ? `(${username})` : ""}</Text>
       </Pressable>
