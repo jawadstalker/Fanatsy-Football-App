@@ -6,8 +6,16 @@ import { leaguesRouter } from "./leagues";
 import authRouter from "./auth";
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+const allowedOrigins = (process.env.CORS_ORIGINS ?? "*")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: allowedOrigins.includes("*") ? true : allowedOrigins,
+}));
+app.use(express.json({ limit: "64kb" }));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
