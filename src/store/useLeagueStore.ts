@@ -124,7 +124,7 @@ export const useLeagueStore = create<LeagueState>()(
         if (!leagueCode || !teamId || !token) return;
         set({ loading: true, error: null });
         try {
-          await backend.submitPoints(leagueCode, teamId, getCurrentGameweek(), gwPoints, token);
+          await backend.calculateAndSubmitPoints(leagueCode, teamId, getCurrentGameweek(), token);
           const standings = await backend.getStandings(leagueCode, token);
           set({ standings, loading: false });
         } catch (err) {
