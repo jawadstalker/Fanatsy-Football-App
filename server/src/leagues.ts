@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { nanoid } from "nanoid";
 import { createLeague, getLeague, joinLeague, setTeamPoints, getStandings, updateTeamSquad } from "./store";
+import { calculateServerGameweekPoints, calculateSquadTotal } from "./scoring";
 import { requireAuth } from "./auth";
 
 export const leaguesRouter = Router();
@@ -83,6 +84,23 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
   );
   if (!team) return res.status(404).json({ error: "Team not found" });
   res.json(team);
+});
+
+leaguesRouter.post("/:code/teams/:teamId/calculate-points", requireAuth, async (req, res) => {
+  const { gameweek } = req.body as { gameweek?: number };
+  if (!Number.isInteger(gameweek) || gameweek < 1 || gameweek > 100) return res.status(400).json({ error: "gameweek must be an integer between 1 and 100" });
+  const code=req.params.code.toUpperCase();
+  const team=getStandings(code).find(t=>t.id===req.params.teamId);
+  if(!team||team.userId!==req.userId)return res.status(403).json({error:"You do not own this team"});
+  if(!team.squadPlayerIds||team.squadPlayerIds.length!==15)return res.status(400).json({error:"Save a complete 15-player squad before calculating points"});
+  try{
+    const points=await calculateServerGameweekPoints(team.squadPlayerIds,gameweek);
+    const total=calculateSquadTotal(points,team.squadPlayerIds,team.captainId,team.viceCaptainId,team.activeChips??[]);
+    const result=setTeamPoints(team.id,gameweek,total);
+    if(!result.team)return res.status(404).json({error:"Team not found"});
+    if(result.duplicate)return res.status(409).json({error:`Points already submitted for gameweek ${gameweek}`,team:result.team});
+    return res.json(result.team);
+  }catch(err){return res.status(502).json({error:"Gameweek scoring failed",detail:(err as Error).message});}
 });
 
 leaguesRouter.post("/:code/teams/:teamId/points", requireAuth, (req, res) => {
