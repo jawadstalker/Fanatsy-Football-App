@@ -23,6 +23,7 @@ export function saveSquad(
   code: string,
   teamId: string,
   squadPlayerIds: number[],
+  startingPlayerIds: number[],
   captainId: number | null,
   viceCaptainId: number | null,
   activeChips: string[],
@@ -32,7 +33,7 @@ export function saveSquad(
     `/api/leagues/${encodeURIComponent(code)}/teams/${encodeURIComponent(teamId)}/squad`,
     {
       method: "PUT",
-      body: JSON.stringify({ squadPlayerIds, captainId, viceCaptainId, activeChips }),
+      body: JSON.stringify({ squadPlayerIds, startingPlayerIds, captainId, viceCaptainId, activeChips }),
     },
     token
   );
