@@ -141,7 +141,11 @@ export const useTeamStore = create<TeamState>()(
         const { squad, bank, chips } = get();
         if (squad.some((p) => p.id === market.id)) return { ok: false, reason: "exists" };
 
-        const clubCount = squad.filter((p) => (p.clubId ?? p.club) === (market.clubId ?? market.club)).length;
+        const clubCount = squad.filter(
+          (p) =>
+            p.id !== replacePlayerId &&
+            (p.clubId ?? p.club) === (market.clubId ?? market.club)
+        ).length;
         if (clubCount >= MAX_PLAYERS_PER_CLUB) return { ok: false, reason: "full" };
 
         const unlimitedTransfers = chips.wildcard === "active" || chips.freeHit === "active";
