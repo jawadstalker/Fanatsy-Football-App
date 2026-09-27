@@ -19,5 +19,24 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
 export function createLeague(name:string, token:string):Promise<BackendLeague>{return request("/api/leagues",{method:"POST",body:JSON.stringify({name})},token)}
 export function getLeague(code:string, token:string):Promise<BackendLeague>{return request(`/api/leagues/${encodeURIComponent(code)}`,{},token)}
 export function joinLeague(code:string, managerName:string, token:string):Promise<BackendTeam>{return request(`/api/leagues/${encodeURIComponent(code)}/join`,{method:"POST",body:JSON.stringify({managerName})},token)}
+export function saveSquad(
+  code: string,
+  teamId: string,
+  squadPlayerIds: number[],
+  captainId: number | null,
+  viceCaptainId: number | null,
+  activeChips: string[],
+  token: string
+): Promise<BackendTeam> {
+  return request(
+    `/api/leagues/${encodeURIComponent(code)}/teams/${encodeURIComponent(teamId)}/squad`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ squadPlayerIds, captainId, viceCaptainId, activeChips }),
+    },
+    token
+  );
+}
+
 export function submitPoints(code:string,teamId:string,gameweek:number,gwPoints:number,token:string):Promise<BackendTeam>{return request(`/api/leagues/${encodeURIComponent(code)}/teams/${encodeURIComponent(teamId)}/points`,{method:"POST",body:JSON.stringify({gameweek,gwPoints})},token)}
 export function getStandings(code:string, token:string):Promise<BackendTeam[]>{return request(`/api/leagues/${encodeURIComponent(code)}/standings`,{},token)}
