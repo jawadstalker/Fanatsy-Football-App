@@ -5,6 +5,7 @@ import * as backend from "@/api/backendClient";
 import { BackendTeam } from "@/types";
 import { getCurrentGameweek } from "@/config/gameweek";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTeamStore } from "@/store/useTeamStore";
 
 interface LeagueState {
   managerName: string | null;
@@ -18,6 +19,7 @@ interface LeagueState {
   createLeague: (leagueName: string, managerName: string) => Promise<boolean>;
   joinLeague: (code: string, managerName: string) => Promise<boolean>;
   refreshStandings: () => Promise<void>;
+  saveSquad: () => Promise<boolean>;
   submitPoints: (gwPoints: number) => Promise<void>;
   leaveLeague: () => void;
 }
@@ -88,6 +90,31 @@ export const useLeagueStore = create<LeagueState>()(
           set({ standings, loading: false });
         } catch (err) {
           set({ error: (err as Error).message, loading: false });
+        }
+      },
+
+      saveSquad: async () => {
+        const { leagueCode, teamId } = get();
+        const token = useAuthStore.getState().token;
+        if (!leagueCode || !teamId || !token) return false;
+
+        const teamState = useTeamStore.getState();
+        try {
+          await backend.saveSquad(
+            leagueCode,
+            teamId,
+            teamState.squad.map((player) => player.id),
+            teamState.captainId ?? null,
+            teamState.viceCaptainId ?? null,
+            (Object.entries(teamState.chips) as [string, string][])
+              .filter(([, status]) => status === "active")
+              .map(([chip]) => chip),
+            token
+          );
+          return true;
+        } catch (err) {
+          set({ error: (err as Error).message });
+          return false;
         }
       },
 
