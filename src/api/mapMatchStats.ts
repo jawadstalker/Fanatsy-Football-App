@@ -36,6 +36,7 @@ export function mapFixtureStatsToMatchStats(
     penaltiesMissed: stats.penalty.missed ?? 0,
     yellowCards: stats.cards.yellow ?? 0,
     redCards: stats.cards.red ?? 0,
-    ownGoals: 0, // API-Football doesn't expose own goals on this endpoint
+    ownGoals: 0, // API-Football does not expose own goals on this endpoint
+    bonus: 0,
   };
 }
