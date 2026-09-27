@@ -12,6 +12,7 @@ export interface MatchStats {
   yellowCards: number;
   redCards: number;
   ownGoals: number;
+  goalsConceded: number;
   bonus?: number; // 0-3, computed separately from match BPS if you implement it
 }
 
