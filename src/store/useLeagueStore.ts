@@ -104,6 +104,7 @@ export const useLeagueStore = create<LeagueState>()(
             leagueCode,
             teamId,
             teamState.squad.map((player) => player.id),
+            teamState.squad.filter((player) => player.isStarting).map((player) => player.id),
             teamState.captainId ?? null,
             teamState.viceCaptainId ?? null,
             (Object.entries(teamState.chips) as [string, string][])
