@@ -175,7 +175,12 @@ function RealLeagueView() {
       </Pressable>
 
       <Pressable
-        onPress={async () => { await league.submitPoints(gameweekTotal); setSubmitted(true); }}
+        onPress={async () => {
+          const saved = await league.saveSquad();
+          if (!saved) return;
+          await league.submitPoints(gameweekTotal);
+          setSubmitted(true);
+        }}
         className="mx-4 mb-3 rounded-lg py-2.5 items-center"
         style={{ backgroundColor: colors.turf }}
       >
