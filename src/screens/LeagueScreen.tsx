@@ -109,6 +109,7 @@ function RealLeagueView() {
   const [mode, setMode] = useState<"create" | "join">("join");
   const league = useLeagueStore();
   const gameweekTotal = useTeamStore((s) => s.gameweekTotal());
+  const [submitted, setSubmitted] = useState(false);
   const username = useAuthStore((s) => s.username);
   const token = useAuthStore((s) => s.token);
   const authLoading = useAuthStore((s) => s.loading);
@@ -174,12 +175,12 @@ function RealLeagueView() {
       </Pressable>
 
       <Pressable
-        onPress={() => league.submitPoints(gameweekTotal)}
+        onPress={async () => { await league.submitPoints(gameweekTotal); setSubmitted(true); }}
         className="mx-4 mb-3 rounded-lg py-2.5 items-center"
         style={{ backgroundColor: colors.turf }}
       >
         <Text className="text-sm font-body-medium" style={{ color: colors.base }}>
-          Submit this week's points ({gameweekTotal})
+          {submitted ? "Points submitted" : `Submit this week's points (${gameweekTotal})`}
         </Text>
       </Pressable>
 
