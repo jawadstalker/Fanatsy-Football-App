@@ -1,0 +1,72 @@
+export const LEAGUE_API_IDS = { epl: 39, laliga: 140, seriea: 135, bundesliga: 78, ligue1: 61 } as const;
+export const CURRENT_SEASON = 2026;
+const API_HOST = "api-football-v1.p.rapidapi.com";
+const API_BASE_URL = `https://${API_HOST}/v3`;
+
+type Position = "GK" | "DEF" | "MID" | "FWD";
+type PlayerStats = {
+  player: { id: number };
+  statistics: Array<{
+    games: { minutes?: number | null; position?: string | null };
+    goals: { total?: number | null; assists?: number | null; saves?: number | null };
+    penalty: { saved?: number | null; missed?: number | null };
+    cards: { yellow?: number | null; red?: number | null };
+  }>;
+};
+type Fixture = {
+  fixture: { id: number; status?: { short?: string }; round?: string | null };
+  teams: { home: { id: number }; away: { id: number } };
+  goals: { home: number | null; away: number | null };
+};
+const POSITIONS: Record<string, Position> = { Goalkeeper:"GK", Defender:"DEF", Midfielder:"MID", Attacker:"FWD" };
+const GOALS: Record<Position, number> = { GK:6, DEF:6, MID:5, FWD:4 };
+const CLEAN: Record<Position, number> = { GK:4, DEF:4, MID:1, FWD:0 };
+
+async function apiGet<T>(path:string, query:Record<string,string|number>):Promise<T> {
+  const key=process.env.RAPIDAPI_KEY;
+  if(!key) throw new Error("RAPIDAPI_KEY is not set on the server");
+  const params=new URLSearchParams(Object.entries(query).map(([k,v])=>[k,String(v)]));
+  const r=await fetch(`${API_BASE_URL}${path}?${params}`,{headers:{"x-rapidapi-key":key,"x-rapidapi-host":API_HOST}});
+  const body=await r.json() as T;
+  if(!r.ok) throw new Error(`API-Football request failed (${r.status})`);
+  return body;
+}
+function score(s:PlayerStats["statistics"][number],pos:Position,conceded:number){
+  const min=s.games.minutes??0;if(min<=0)return 0;
+  return (min>=60?2:1)+(s.goals.total??0)*GOALS[pos]+(s.goals.assists??0)*3+
+    (conceded===0&&min>=60?CLEAN[pos]:0)+(pos==="GK"?Math.floor((s.goals.saves??0)/3):0)+
+    (s.penalty.saved??0)*5-(s.penalty.missed??0)*2-(pos==="GK"||pos==="DEF"?Math.floor(conceded/2):0)+
+    (s.cards.yellow??0)*-1+(s.cards.red??0)*-3;
+}
+async function fixtures(league:number,gameweek:number){
+  const round=`Regular Season - ${gameweek}`;
+  const data=await apiGet<{response:Fixture[]}>("/fixtures",{league,season:CURRENT_SEASON,round});
+  return data.response;
+}
+export async function calculateServerGameweekPoints(ids:number[],gameweek:number){
+  const totals=new Map<number,number>();
+  for(const league of Object.values(LEAGUE_API_IDS)){
+    const fs=await fixtures(league,gameweek);
+    await Promise.all(fs.map(async f=>{
+      if(!["FT","AET","PEN"].includes(f.fixture.status?.short??""))return;
+      const data=await apiGet<{response:Array<{team:{id:number};players:PlayerStats[]}>}>("/fixtures/players",{fixture:f.fixture.id});
+      const conceded:Record<number,number>={[f.teams.home.id]:f.goals.away??0,[f.teams.away.id]:f.goals.home??0};
+      for(const block of data.response) for(const p of block.players){
+        if(!ids.includes(p.player.id))continue;
+        const s=p.statistics[0]; if(!s)continue;
+        const pos=POSITIONS[s.games.position??""]; if(!pos)continue;
+        totals.set(p.player.id,(totals.get(p.player.id)??0)+score(s,pos,conceded[block.team.id]??0));
+      }
+    }));
+  }
+  return totals;
+}
+export function calculateSquadTotal(points:Map<number,number>,ids:number[],captainId:number|null|undefined,viceId:number|null|undefined,chips:string[],benchIds:number[]=[]){
+  const starting=ids.filter(id=>!benchIds.includes(id));
+  const captainPlayed=captainId!=null&&points.has(captainId);
+  const vicePlayed=viceId!=null&&points.has(viceId);
+  const effective=captainPlayed?captainId:(vicePlayed?viceId:null);
+  const multiplier=chips.includes("tripleCaptain")&&effective===captainId?3:2;
+  const scored=chips.includes("benchBoost")?ids:starting;
+  return scored.reduce((sum,id)=>sum+(id===effective?(points.get(id)??0)*multiplier:(points.get(id)??0)),0);
+}
