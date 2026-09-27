@@ -61,8 +61,8 @@ export async function calculateServerGameweekPoints(ids:number[],gameweek:number
   }
   return totals;
 }
-export function calculateSquadTotal(points:Map<number,number>,ids:number[],captainId:number|null|undefined,viceId:number|null|undefined,chips:string[],benchIds:number[]=[]){
-  const starting=ids.filter(id=>!benchIds.includes(id));
+export function calculateSquadTotal(points:Map<number,number>,ids:number[],captainId:number|null|undefined,viceId:number|null|undefined,chips:string[],startingIds:number[]=[]){
+  const starting=startingIds.length===11?startingIds:ids;
   const captainPlayed=captainId!=null&&points.has(captainId);
   const vicePlayed=viceId!=null&&points.has(viceId);
   const effective=captainPlayed?captainId:(vicePlayed?viceId:null);
