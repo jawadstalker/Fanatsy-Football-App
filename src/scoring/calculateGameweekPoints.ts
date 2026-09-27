@@ -4,6 +4,7 @@ import { calculatePoints, PointsBreakdown } from "@/scoring/calculatePoints";
 import { LEAGUE_API_IDS, CURRENT_SEASON } from "@/api/leagues";
 
 export interface GameweekPlayerPoints {
+  // Aggregated points across all fixtures in the round for this player.
   playerId: number;
   name: string;
   teamId: number;
@@ -73,4 +74,29 @@ export async function calculateLeagueGameweekPoints(
   );
 
   return [...totals.values()].sort((a, b) => b.points.total - a.points.total);
+}
+
+
+export function calculateSquadGameweekPoints(
+  results: GameweekPlayerPoints[],
+  squad: { id: number; isStarting: boolean }[],
+  captainId: number,
+  viceCaptainId: number | null,
+  options: { benchBoost: boolean; tripleCaptain: boolean; pointsHit: number }
+): number {
+  const byPlayer = new Map(results.map((result) => [result.playerId, result.points.total]));
+  const starting = squad.filter((player) => player.isStarting);
+  const captain = starting.find((player) => player.id === captainId);
+  const vice = viceCaptainId == null ? null : starting.find((player) => player.id === viceCaptainId);
+  const captainPoints = captain ? (byPlayer.get(captain.id) ?? 0) : 0;
+  const effectiveCaptainId = captain && captainPoints > 0 ? captain.id : (vice?.id ?? null);
+  const captainMultiplier = options.tripleCaptain && effectiveCaptainId === captain?.id ? 3 : 2;
+  const scoredPlayers = options.benchBoost ? squad : starting;
+
+  const raw = scoredPlayers.reduce((sum, player) => {
+    const points = byPlayer.get(player.id) ?? 0;
+    return sum + (player.id === effectiveCaptainId ? points * captainMultiplier : points);
+  }, 0);
+
+  return raw - options.pointsHit;
 }
