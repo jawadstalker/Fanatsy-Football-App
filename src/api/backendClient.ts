@@ -38,5 +38,5 @@ export function saveSquad(
   );
 }
 
-export function submitPoints(code:string,teamId:string,gameweek:number,gwPoints:number,token:string):Promise<BackendTeam>{return request(`/api/leagues/${encodeURIComponent(code)}/teams/${encodeURIComponent(teamId)}/points`,{method:"POST",body:JSON.stringify({gameweek,gwPoints})},token)}
+export function calculateAndSubmitPoints(code:string,teamId:string,gameweek:number,token:string):Promise<BackendTeam>{return request(`/api/leagues/${encodeURIComponent(code)}/teams/${encodeURIComponent(teamId)}/calculate-points`,{method:"POST",body:JSON.stringify({gameweek})},token)}
 export function getStandings(code:string, token:string):Promise<BackendTeam[]>{return request(`/api/leagues/${encodeURIComponent(code)}/standings`,{},token)}
