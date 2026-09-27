@@ -10,6 +10,10 @@ export interface League {
 }
 
 export interface Team {
+  squadPlayerIds?: number[];
+  captainId?: number | null;
+  viceCaptainId?: number | null;
+  activeChips?: string[];
   id: string;
   leagueCode: string;
   managerName: string;
