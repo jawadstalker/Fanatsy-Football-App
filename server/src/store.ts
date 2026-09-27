@@ -86,6 +86,27 @@ export function joinLeague(id: string, leagueCode: string, managerName: string, 
   return team;
 }
 
+export function updateTeamSquad(
+  teamId: string,
+  squadPlayerIds: number[],
+  captainId: number | null,
+  viceCaptainId: number | null,
+  activeChips: string[]
+): Team | null {
+  const db = readDb();
+  const stored = db.teams[teamId];
+  if (!stored) return null;
+
+  const team = normalizeTeam(stored);
+  team.squadPlayerIds = [...squadPlayerIds];
+  team.captainId = captainId;
+  team.viceCaptainId = viceCaptainId;
+  team.activeChips = [...activeChips];
+  db.teams[teamId] = team;
+  writeDb(db);
+  return team;
+}
+
 export function setTeamPoints(teamId: string, gameweek: number, gwPoints: number): { team: Team | null; duplicate: boolean } {
   const db = readDb();
   const stored = db.teams[teamId];
