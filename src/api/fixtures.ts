@@ -19,3 +19,17 @@ export async function fetchFixturePlayerStats(
   });
   return data.response;
 }
+
+
+export async function fetchLeagueRoundFixtures(
+  leagueId: number,
+  season: number,
+  round: string
+): Promise<ApiFixtureEntry[]> {
+  const data = await apiFootballGet<ApiFixtureResponse>("/fixtures", {
+    league: leagueId,
+    season,
+    round,
+  });
+  return data.response;
+}
