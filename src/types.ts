@@ -73,6 +73,10 @@ export interface BackendTeam {
   userId?: string;
   gwPoints: number;
   totalPoints: number;
+  squadPlayerIds?: number[];
+  captainId?: number | null;
+  viceCaptainId?: number | null;
+  activeChips?: string[];
 }
 
 export interface SquadPlayer extends Player {
