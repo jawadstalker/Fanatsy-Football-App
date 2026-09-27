@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { nanoid } from "nanoid";
-import { createLeague, getLeague, joinLeague, setTeamPoints, getStandings } from "./store";
+import { createLeague, getLeague, joinLeague, setTeamPoints, getStandings, updateTeamSquad } from "./store";
 import { requireAuth } from "./auth";
 
 export const leaguesRouter = Router();
@@ -31,6 +31,58 @@ leaguesRouter.post("/:code/join", requireAuth, (req, res) => {
   if (!getLeague(code)) return res.status(404).json({ error: "League not found" });
 
   res.status(201).json(joinLeague(nanoid(10), code, normalized, req.userId!));
+});
+
+leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
+  const { squadPlayerIds, captainId, viceCaptainId, activeChips } = req.body as {
+    squadPlayerIds?: unknown;
+    captainId?: unknown;
+    viceCaptainId?: unknown;
+    activeChips?: unknown;
+  };
+
+  if (!Array.isArray(squadPlayerIds) || squadPlayerIds.length !== 15 || !squadPlayerIds.every((id) => Number.isInteger(id) && id > 0)) {
+    return res.status(400).json({ error: "squadPlayerIds must contain exactly 15 positive integer player IDs" });
+  }
+
+  const uniqueIds = new Set(squadPlayerIds as number[]);
+  if (uniqueIds.size !== 15) {
+    return res.status(400).json({ error: "squadPlayerIds must contain 15 unique players" });
+  }
+
+  if (captainId !== null && (!Number.isInteger(captainId) || !uniqueIds.has(captainId as number))) {
+    return res.status(400).json({ error: "captainId must be null or a player in the squad" });
+  }
+
+  if (viceCaptainId !== null && (!Number.isInteger(viceCaptainId) || !uniqueIds.has(viceCaptainId as number))) {
+    return res.status(400).json({ error: "viceCaptainId must be null or a player in the squad" });
+  }
+
+  if (captainId !== null && viceCaptainId !== null && captainId === viceCaptainId) {
+    return res.status(400).json({ error: "captainId and viceCaptainId must be different" });
+  }
+
+  const allowedChips = new Set(["wildcard", "benchBoost", "tripleCaptain", "freeHit"]);
+  if (!Array.isArray(activeChips) || activeChips.length > 1 || !activeChips.every((chip) => typeof chip === "string" && allowedChips.has(chip))) {
+    return res.status(400).json({ error: "activeChips must contain at most one valid chip" });
+  }
+
+  const code = req.params.code.toUpperCase();
+  if (!getLeague(code)) return res.status(404).json({ error: "League not found" });
+  const currentTeam = getStandings(code).find((team) => team.id === req.params.teamId);
+  if (!currentTeam || currentTeam.userId !== req.userId) {
+    return res.status(403).json({ error: "You do not own this team" });
+  }
+
+  const team = updateTeamSquad(
+    req.params.teamId,
+    squadPlayerIds as number[],
+    captainId as number | null,
+    viceCaptainId as number | null,
+    activeChips as string[]
+  );
+  if (!team) return res.status(404).json({ error: "Team not found" });
+  res.json(team);
 });
 
 leaguesRouter.post("/:code/teams/:teamId/points", requireAuth, (req, res) => {
