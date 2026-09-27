@@ -74,6 +74,7 @@ export interface BackendTeam {
   gwPoints: number;
   totalPoints: number;
   squadPlayerIds?: number[];
+  startingPlayerIds?: number[];
   captainId?: number | null;
   viceCaptainId?: number | null;
   activeChips?: string[];
