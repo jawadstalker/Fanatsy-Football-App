@@ -31,6 +31,7 @@ export function SquadScreen() {
   const bank = useTeamStore((s) => s.bank());
   const squadValue = useTeamStore((s) => s.squadValue());
   const gameweekTotal = useTeamStore((s) => s.gameweekTotal());
+  const pointsHit = useTeamStore((s) => s.pointsHit());
   const chips = useTeamStore((s) => s.chips);
   const activateChip = useTeamStore((s) => s.activateChip);
   const cancelChip = useTeamStore((s) => s.cancelChip);
@@ -61,6 +62,11 @@ export function SquadScreen() {
   return (
     <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
       <TopBar title="Squad" sub={`${squad.length}/15 players`} points={gameweekTotal} />
+      {pointsHit > 0 && (
+        <View className="mx-4 mb-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.elevated }}>
+          <Text className="text-[11px] font-body text-muted">Transfer cost this gameweek: -{pointsHit} pts</Text>
+        </View>
+      )}
 
       <View className="px-4 flex-row items-center gap-2 mb-2">
         <View className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface">
