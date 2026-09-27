@@ -64,6 +64,7 @@ interface TeamState {
   squadValue: () => number;
   pointsHit: () => number;
   gameweekTotal: () => number;
+  captainMultiplier: () => number;
   isInSquad: (playerId: number) => boolean;
   isLocked: () => boolean;
 
@@ -112,22 +113,26 @@ export const useTeamStore = create<TeamState>()(
 
       isInSquad: (playerId) => get().squad.some((p) => p.id === playerId),
 
+      captainMultiplier: () => {
+        const { squad, captainId, chips } = get();
+        const captain = squad.find((p) => p.id === captainId);
+        if (!captain || !captain.isStarting) return 1;
+        return chips.tripleCaptain === "active" ? 3 : 2;
+      },
+
       gameweekTotal: () => {
         const { squad, captainId, viceCaptainId, chips, pointsHit } = get();
         const starting = squad.filter((p) => p.isStarting);
         const captain = starting.find((p) => p.id === captainId);
-
-        // If the captain didn't play (0 points), the armband effect
-        // passes to the vice-captain instead — same as real FPL.
-        const armbandId = captain && captain.pts > 0 ? captainId : viceCaptainId ?? captainId;
-        const multiplier = chips.tripleCaptain === "active" ? 3 : 2;
-
+        const effectiveCaptain = captain && captain.pts > 0
+          ? captainId
+          : (viceCaptainId && starting.some((p) => p.id === viceCaptainId) ? viceCaptainId : null);
+        const multiplier = chips.tripleCaptain === "active" && effectiveCaptain === captainId ? 3 : 2;
         const scored = chips.benchBoost === "active" ? squad : starting;
         const raw = scored.reduce((sum, p) => {
-          if (p.id === armbandId) return sum + p.pts * multiplier;
+          if (p.id === effectiveCaptain) return sum + p.pts * multiplier;
           return sum + p.pts;
         }, 0);
-
         return raw - pointsHit();
       },
 
