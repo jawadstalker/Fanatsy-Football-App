@@ -42,6 +42,8 @@ leaguesRouter.post("/:code/teams/:teamId/points", requireAuth, (req, res) => {
     return res.status(400).json({ error: "gwPoints must be a finite number" });
   }
 
+  if (gwPoints < -100 || gwPoints > 500) return res.status(400).json({ error: "gwPoints is outside the allowed range" });
+
   const currentTeam = getStandings(req.params.code.toUpperCase()).find((team) => team.id === req.params.teamId);
   if (!currentTeam || currentTeam.userId !== req.userId) return res.status(403).json({ error: "You do not own this team" });
 
