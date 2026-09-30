@@ -95,33 +95,19 @@ leaguesRouter.post("/:code/teams/:teamId/calculate-points", requireAuth, async (
   if(!team.squadPlayerIds||team.squadPlayerIds.length!==15)return res.status(400).json({error:"Save a complete 15-player squad before calculating points"});
   try{
     const points=await calculateServerGameweekPoints(team.squadPlayerIds,gameweek);
-    const total=calculateSquadTotal(points,team.squadPlayerIds,team.captainId,team.viceCaptainId,team.activeChips??[]);
+    const total=calculateSquadTotal(
+      points,
+      team.squadPlayerIds,
+      team.captainId,
+      team.viceCaptainId,
+      team.activeChips ?? [],
+      team.startingPlayerIds ?? []
+    );
     const result=setTeamPoints(team.id,gameweek,total);
     if(!result.team)return res.status(404).json({error:"Team not found"});
     if(result.duplicate)return res.status(409).json({error:`Points already submitted for gameweek ${gameweek}`,team:result.team});
     return res.json(result.team);
   }catch(err){return res.status(502).json({error:"Gameweek scoring failed",detail:(err as Error).message});}
-});
-
-leaguesRouter.post("/:code/teams/:teamId/points", requireAuth, (req, res) => {
-  const { gameweek, gwPoints } = req.body as { gameweek?: number; gwPoints?: number };
-  if (!Number.isInteger(gameweek) || gameweek < 1 || gameweek > 100) {
-    return res.status(400).json({ error: "gameweek must be an integer between 1 and 100" });
-  }
-  if (typeof gwPoints !== "number" || !Number.isFinite(gwPoints)) {
-    return res.status(400).json({ error: "gwPoints must be a finite number" });
-  }
-
-  if (gwPoints < -100 || gwPoints > 500) return res.status(400).json({ error: "gwPoints is outside the allowed range" });
-
-  const currentTeam = getStandings(req.params.code.toUpperCase()).find((team) => team.id === req.params.teamId);
-  if (!currentTeam || currentTeam.userId !== req.userId) return res.status(403).json({ error: "You do not own this team" });
-
-  const result = setTeamPoints(req.params.teamId, gameweek, gwPoints);
-  if (!result.team) return res.status(404).json({ error: "Team not found" });
-  if (result.duplicate) return res.status(409).json({ error: `Points already submitted for gameweek ${gameweek}`, team: result.team });
-
-  res.json(result.team);
 });
 
 leaguesRouter.get("/:code/standings", (req, res) => {
