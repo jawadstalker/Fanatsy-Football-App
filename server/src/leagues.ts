@@ -40,15 +40,25 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
     captainId?: unknown;
     viceCaptainId?: unknown;
     activeChips?: unknown;
+    startingPlayerIds?: unknown;
   };
 
   if (!Array.isArray(squadPlayerIds) || squadPlayerIds.length !== 15 || !squadPlayerIds.every((id) => Number.isInteger(id) && id > 0)) {
     return res.status(400).json({ error: "squadPlayerIds must contain exactly 15 positive integer player IDs" });
   }
 
+  if (!Array.isArray(startingPlayerIds) || startingPlayerIds.length !== 11 || !startingPlayerIds.every((id) => Number.isInteger(id) && id > 0)) {
+    return res.status(400).json({ error: "startingPlayerIds must contain exactly 11 positive integer player IDs" });
+  }
+
   const uniqueIds = new Set(squadPlayerIds as number[]);
+  const uniqueStartingIds = new Set(startingPlayerIds as number[]);
   if (uniqueIds.size !== 15) {
     return res.status(400).json({ error: "squadPlayerIds must contain 15 unique players" });
+  }
+
+  if (uniqueStartingIds.size !== 11 || [...uniqueStartingIds].some((id) => !uniqueIds.has(id))) {
+    return res.status(400).json({ error: "startingPlayerIds must contain 11 unique players from the squad" });
   }
 
   if (captainId !== null && (!Number.isInteger(captainId) || !uniqueIds.has(captainId as number))) {
@@ -80,7 +90,8 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
     squadPlayerIds as number[],
     captainId as number | null,
     viceCaptainId as number | null,
-    activeChips as string[]
+    activeChips as string[],
+    startingPlayerIds as number[]
   );
   if (!team) return res.status(404).json({ error: "Team not found" });
   res.json(team);
