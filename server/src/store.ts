@@ -15,6 +15,7 @@ export interface Team {
   viceCaptainId?: number | null;
   activeChips?: string[];
   startingPlayerIds?: number[];
+  chipUsage?: Record<string, number>;
   id: string;
   leagueCode: string;
   managerName: string;
@@ -103,6 +104,7 @@ export function updateTeamSquad(
   team.captainId = captainId;
   team.viceCaptainId = viceCaptainId;
   team.activeChips = [...activeChips];
+  team.chipUsage = team.chipUsage ?? {};
   db.teams[teamId] = team;
   writeDb(db);
   return team;
