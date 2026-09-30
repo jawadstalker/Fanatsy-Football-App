@@ -93,7 +93,8 @@ export function updateTeamSquad(
   squadPlayerIds: number[],
   captainId: number | null,
   viceCaptainId: number | null,
-  activeChips: string[]
+  activeChips: string[],
+  startingPlayerIds: number[]
 ): Team | null {
   const db = readDb();
   const stored = db.teams[teamId];
@@ -104,6 +105,7 @@ export function updateTeamSquad(
   team.captainId = captainId;
   team.viceCaptainId = viceCaptainId;
   team.activeChips = [...activeChips];
+  team.startingPlayerIds = [...startingPlayerIds];
   team.chipUsage = team.chipUsage ?? {};
   db.teams[teamId] = team;
   writeDb(db);
