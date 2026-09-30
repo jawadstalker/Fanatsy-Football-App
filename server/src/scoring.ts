@@ -3,6 +3,19 @@ export const CURRENT_SEASON = 2026;
 const API_HOST = "api-football-v1.p.rapidapi.com";
 const API_BASE_URL = `https://${API_HOST}/v3`;
 
+type CacheEntry<T> = { expiresAt: number; value: T };
+const cache = new Map<string, CacheEntry<unknown>>();
+const FIXTURE_CACHE_MS = 10 * 60 * 1000;
+const PLAYER_STATS_CACHE_MS = 60 * 60 * 1000;
+
+async function cached<T>(key: string, ttl: number, loader: () => Promise<T>): Promise<T> {
+  const hit = cache.get(key);
+  if (hit && hit.expiresAt > Date.now()) return hit.value as T;
+  const value = await loader();
+  cache.set(key, { expiresAt: Date.now() + ttl, value });
+  return value;
+}
+
 type Position = "GK" | "DEF" | "MID" | "FWD";
 type PlayerStats = {
   player: { id: number };
@@ -39,9 +52,13 @@ function score(s:PlayerStats["statistics"][number],pos:Position,conceded:number)
     (s.cards.yellow??0)*-1+(s.cards.red??0)*-3;
 }
 async function fixtures(league:number,gameweek:number){
-  const round=`Regular Season - ${gameweek}`;
-  const data=await apiGet<{response:Fixture[]}>("/fixtures",{league,season:CURRENT_SEASON,round});
-  return data.response;
+  return cached(`fixtures:${league}:${CURRENT_SEASON}:${gameweek}`, FIXTURE_CACHE_MS, async () => {
+    const data=await apiGet<{response:Fixture[]}>("/fixtures",{league,season:CURRENT_SEASON});
+    return data.response.filter((fixture) => {
+      const match=fixture.fixture.round?.match(/(\\d+)\\s*$/);
+      return match ? Number(match[1]) === gameweek : false;
+    });
+  });
 }
 export async function calculateServerGameweekPoints(ids:number[],gameweek:number){
   const totals=new Map<number,number>();
@@ -49,7 +66,9 @@ export async function calculateServerGameweekPoints(ids:number[],gameweek:number
     const fs=await fixtures(league,gameweek);
     await Promise.all(fs.map(async f=>{
       if(!["FT","AET","PEN"].includes(f.fixture.status?.short??""))return;
-      const data=await apiGet<{response:Array<{team:{id:number};players:PlayerStats[]}>}>("/fixtures/players",{fixture:f.fixture.id});
+      const data=await cached(`fixture-stats:${f.fixture.id}`, PLAYER_STATS_CACHE_MS, () =>
+        apiGet<{response:Array<{team:{id:number};players:PlayerStats[]}>}>("/fixtures/players",{fixture:f.fixture.id})
+      );
       const conceded:Record<number,number>={[f.teams.home.id]:f.goals.away??0,[f.teams.away.id]:f.goals.home??0};
       for(const block of data.response) for(const p of block.players){
         if(!ids.includes(p.player.id))continue;
