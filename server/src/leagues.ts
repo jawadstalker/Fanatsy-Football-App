@@ -35,7 +35,7 @@ leaguesRouter.post("/:code/join", requireAuth, (req, res) => {
 });
 
 leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
-  const { squadPlayerIds, captainId, viceCaptainId, activeChips } = req.body as {
+  const { squadPlayerIds, startingPlayerIds, captainId, viceCaptainId, activeChips } = req.body as {
     squadPlayerIds?: unknown;
     captainId?: unknown;
     viceCaptainId?: unknown;
