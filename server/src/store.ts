@@ -14,6 +14,7 @@ export interface Team {
   captainId?: number | null;
   viceCaptainId?: number | null;
   activeChips?: string[];
+  startingPlayerIds?: number[];
   id: string;
   leagueCode: string;
   managerName: string;
