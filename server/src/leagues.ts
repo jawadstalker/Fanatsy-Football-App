@@ -164,6 +164,53 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
   res.json(team);
 });
 
+leaguesRouter.post("/:code/teams/:teamId/transfers", requireAuth, (req, res) => {
+  const { outgoingPlayerId, incomingPlayer } = req.body as {
+    outgoingPlayerId?: unknown;
+    incomingPlayer?: RosterPlayerSnapshot;
+  };
+  const code = req.params.code.toUpperCase();
+  if (!getLeague(code)) return res.status(404).json({ error: "League not found" });
+  const team = getStandings(code).find((item) => item.id === req.params.teamId);
+  if (!team || team.userId !== req.userId) return res.status(403).json({ error: "You do not own this team" });
+  if (!team.squadPlayers || team.squadPlayers.length !== 15) return res.status(400).json({ error: "Save a complete squad before making transfers" });
+  if (!Number.isInteger(outgoingPlayerId) || !incomingPlayer || !Number.isInteger(incomingPlayer.id)) return res.status(400).json({ error: "A valid outgoingPlayerId and incomingPlayer are required" });
+  const outgoing = team.squadPlayers.find((p) => p.id === outgoingPlayerId);
+  if (!outgoing) return res.status(400).json({ error: "Outgoing player is not in your squad" });
+  if (team.squadPlayerIds?.includes(incomingPlayer.id)) return res.status(409).json({ error: "Incoming player is already in your squad" });
+  if (!["GK", "DEF", "MID", "FWD"].includes(incomingPlayer.pos) ||
+      typeof incomingPlayer.club !== "string" || !incomingPlayer.club.trim() ||
+      typeof incomingPlayer.price !== "number" || !Number.isFinite(incomingPlayer.price) || incomingPlayer.price <= 0 ||
+      typeof incomingPlayer.league !== "string") return res.status(400).json({ error: "Incoming player metadata is invalid" });
+  if (outgoing.pos !== incomingPlayer.pos) return res.status(400).json({ error: "Transfers must preserve the player's position" });
+
+  const currentGameweek = Number(process.env.CURRENT_GAMEWEEK ?? 6);
+  if (team.submittedGameweeks.includes(currentGameweek)) return res.status(409).json({ error: "Transfers are locked after gameweek submission" });
+  const chip = team.activeChips?.[0] ?? null;
+  const usage = team.chipUsage ?? {};
+  if (chip && chip !== "wildcard" && chip !== "freeHit") return res.status(409).json({ error: "Transfers are unavailable with the active chip" });
+  const unlimited = chip === "wildcard" || chip === "freeHit";
+  if (chip === "freeHit" && !team.freeHitSnapshot) return res.status(409).json({ error: "Free Hit snapshot is missing" });
+  const count = team.squadPlayers.filter((p) => p.id !== outgoing.id && (p.clubId != null ? `id:${p.clubId}` : p.club.trim().toLowerCase()) === (incomingPlayer.clubId != null ? `id:${incomingPlayer.clubId}` : incomingPlayer.club.trim().toLowerCase())).length;
+  if (count >= 3) return res.status(400).json({ error: "A maximum of 3 players per club is allowed" });
+  const newCost = team.squadPlayers.reduce((sum, p) => sum + p.price, 0) - outgoing.price + incomingPlayer.price;
+  if (newCost > 105) return res.status(400).json({ error: "Transfer exceeds the 105.0 budget" });
+  const transfers = (team.transfersThisWeek ?? 0) + 1;
+  const free = team.freeTransfers ?? 1;
+  const hit = unlimited ? 0 : Math.max(0, transfers - free) * 4;
+  if (usage.wildcard || usage.freeHit) {
+    // Chip usage is checked when activating a chip; ordinary transfers remain valid after prior use.
+  }
+  const nextPlayers = team.squadPlayers.map((p) => p.id === outgoing.id ? incomingPlayer : p);
+  const nextIds = nextPlayers.map((p) => p.id);
+  const nextStarting = (team.startingPlayerIds ?? []).map((id) => id === outgoing.id ? incomingPlayer.id : id);
+  const captain = team.captainId === outgoing.id ? incomingPlayer.id : (team.captainId ?? null);
+  const vice = team.viceCaptainId === outgoing.id ? incomingPlayer.id : (team.viceCaptainId ?? null);
+  const updated = updateTeamSquad(team.id, nextIds, captain, vice, team.activeChips ?? [], nextStarting, nextPlayers);
+  if (!updated) return res.status(404).json({ error: "Team not found" });
+  return res.json({ ...updated, transferCost: hit, transfersThisWeek: updated.transfersThisWeek ?? transfers, pointsHit: updated.pointsHit ?? hit });
+});
+
 leaguesRouter.post("/:code/teams/:teamId/calculate-points", requireAuth, async (req, res) => {
   const { gameweek } = req.body as { gameweek?: number };
   if (!Number.isInteger(gameweek) || gameweek < 1 || gameweek > 100) return res.status(400).json({ error: "gameweek must be an integer between 1 and 100" });
