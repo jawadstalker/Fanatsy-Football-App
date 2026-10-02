@@ -122,31 +122,30 @@ export function updateTeamSquad(
   if (!stored) return null;
 
   const team = normalizeTeam(stored);
-  team.squadPlayerIds = [...squadPlayerIds];
-  team.squadPlayers = squadPlayers.map((player) => ({ ...player }));
-  team.captainId = captainId;
-  team.viceCaptainId = viceCaptainId;
-  team.activeChips = [...activeChips];
-  team.startingPlayerIds = [...startingPlayerIds];
-  const previousIds = team.squadPlayerIds ?? [];
+  const previousIds = [...(team.squadPlayerIds ?? [])];
+  const previousPlayers = (team.squadPlayers ?? []).map((player) => ({ ...player }));
+  const previousStartingIds = [...(team.startingPlayerIds ?? [])];
+  const previousCaptainId = team.captainId ?? null;
+  const previousViceCaptainId = team.viceCaptainId ?? null;
+  const previousActiveChips = [...(team.activeChips ?? [])];
   const incomingCount = previousIds.length === 15
     ? squadPlayerIds.filter((id) => !previousIds.includes(id)).length
     : 0;
   const chip = activeChips[0] ?? null;
   team.chipUsage = team.chipUsage ?? {};
-  if (chip === "freeHit" && team.activeChips?.[0] !== "freeHit") {
+  if (chip === "freeHit" && previousActiveChips[0] !== "freeHit") {
     team.freeHitSnapshot = {
-      squadPlayerIds: [...previousIds],
-      squadPlayers: (team.squadPlayers ?? []).map((player) => ({ ...player })),
-      startingPlayerIds: [...(team.startingPlayerIds ?? [])],
-      captainId: team.captainId ?? null,
-      viceCaptainId: team.viceCaptainId ?? null,
+      squadPlayerIds: previousIds,
+      squadPlayers: previousPlayers,
+      startingPlayerIds: previousStartingIds,
+      captainId: previousCaptainId,
+      viceCaptainId: previousViceCaptainId,
     };
   }
-  if (team.activeChips?.[0] && team.activeChips[0] !== chip) {
-    team.chipUsage[team.activeChips[0]] = team.chipUsage[team.activeChips[0]] ?? 1;
+  if (previousActiveChips[0] && previousActiveChips[0] !== chip) {
+    team.chipUsage[previousActiveChips[0]] = team.chipUsage[previousActiveChips[0]] ?? 1;
   }
-  if (chip && team.activeChips?.[0] !== chip) team.chipUsage[chip] = (team.chipUsage[chip] ?? 0) + 1;
+  if (chip && previousActiveChips[0] !== chip) team.chipUsage[chip] = (team.chipUsage[chip] ?? 0) + 1;
   if (chip !== "wildcard" && chip !== "freeHit") {
     team.transfersThisWeek = (team.transfersThisWeek ?? 0) + incomingCount;
     const free = team.freeTransfers ?? 1;
