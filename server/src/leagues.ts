@@ -120,6 +120,38 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
     return res.status(403).json({ error: "You do not own this team" });
   }
 
+  const currentGameweek = Number(process.env.CURRENT_GAMEWEEK ?? 6);
+  const currentTeam = getStandings(code).find((team) => team.id === req.params.teamId)!;
+  const previousIds = currentTeam.squadPlayerIds ?? [];
+  const incomingIds = (squadPlayerIds as number[]).filter((id) => !previousIds.includes(id));
+  const outgoingIds = previousIds.filter((id) => !(squadPlayerIds as number[]).includes(id));
+  const hasRosterChange = incomingIds.length > 0 || outgoingIds.length > 0;
+  const requestedChip = (activeChips as string[])[0] ?? null;
+  const currentActiveChip = currentTeam.activeChips?.[0] ?? null;
+  const chipUsage = currentTeam.chipUsage ?? {};
+
+  if (hasRosterChange && currentTeam.squadPlayerIds?.length === 15) {
+    if (incomingIds.length !== outgoingIds.length) return res.status(400).json({ error: "Each transfer must replace one player" });
+    const unlimited = requestedChip === "wildcard" || requestedChip === "freeHit";
+    const transfersThisWeek = Number(currentTeam.transfersThisWeek ?? 0) + incomingIds.length;
+    const freeTransfers = Number(currentTeam.freeTransfers ?? 1);
+    const transferCost = unlimited ? 0 : Math.max(0, transfersThisWeek - freeTransfers) * 4;
+    if (transferCost > 0 && currentTeam.submittedGameweeks.includes(currentGameweek)) {
+      return res.status(409).json({ error: "Transfers are locked after points submission for this gameweek" });
+    }
+  }
+
+  if (requestedChip && requestedChip !== currentActiveChip && chipUsage[requestedChip]) {
+    return res.status(409).json({ error: "This chip has already been used" });
+  }
+  if (currentActiveChip && requestedChip && currentActiveChip !== requestedChip) {
+    return res.status(400).json({ error: "Only one chip may be active at a time" });
+  }
+  if (currentTeam.submittedGameweeks.includes(currentGameweek) &&
+      (hasRosterChange || requestedChip !== currentActiveChip)) {
+    return res.status(409).json({ error: "Squad and chip changes are locked after gameweek submission" });
+  }
+
   const team = updateTeamSquad(
     req.params.teamId,
     squadPlayerIds as number[],
