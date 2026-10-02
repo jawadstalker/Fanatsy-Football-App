@@ -24,6 +24,7 @@ export function saveSquad(
   teamId: string,
   squadPlayerIds: number[],
   startingPlayerIds: number[],
+  squadPlayers: { id: number; clubId?: number; club: string; pos: "GK" | "DEF" | "MID" | "FWD"; price: number; league: string }[],
   captainId: number | null,
   viceCaptainId: number | null,
   activeChips: string[],
@@ -33,7 +34,7 @@ export function saveSquad(
     `/api/leagues/${encodeURIComponent(code)}/teams/${encodeURIComponent(teamId)}/squad`,
     {
       method: "PUT",
-      body: JSON.stringify({ squadPlayerIds, startingPlayerIds, captainId, viceCaptainId, activeChips }),
+      body: JSON.stringify({ squadPlayerIds, startingPlayerIds, squadPlayers, captainId, viceCaptainId, activeChips }),
     },
     token
   );
