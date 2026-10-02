@@ -26,6 +26,16 @@ export interface Team {
   activeChips?: string[];
   startingPlayerIds?: number[];
   chipUsage?: Record<string, number>;
+  transfersThisWeek?: number;
+  freeTransfers?: number;
+  pointsHit?: number;
+  freeHitSnapshot?: {
+    squadPlayerIds: number[];
+    squadPlayers: RosterPlayerSnapshot[];
+    startingPlayerIds: number[];
+    captainId: number | null;
+    viceCaptainId: number | null;
+  } | null;
   id: string;
   leagueCode: string;
   managerName: string;
@@ -118,7 +128,35 @@ export function updateTeamSquad(
   team.viceCaptainId = viceCaptainId;
   team.activeChips = [...activeChips];
   team.startingPlayerIds = [...startingPlayerIds];
+  const previousIds = team.squadPlayerIds ?? [];
+  const incomingCount = squadPlayerIds.filter((id) => !previousIds.includes(id)).length;
+  const chip = activeChips[0] ?? null;
   team.chipUsage = team.chipUsage ?? {};
+  if (chip === "freeHit" && team.activeChips?.[0] !== "freeHit") {
+    team.freeHitSnapshot = {
+      squadPlayerIds: [...previousIds],
+      squadPlayers: (team.squadPlayers ?? []).map((player) => ({ ...player })),
+      startingPlayerIds: [...(team.startingPlayerIds ?? [])],
+      captainId: team.captainId ?? null,
+      viceCaptainId: team.viceCaptainId ?? null,
+    };
+  }
+  if (team.activeChips?.[0] && team.activeChips[0] !== chip) {
+    team.chipUsage[team.activeChips[0]] = team.chipUsage[team.activeChips[0]] ?? 1;
+  }
+  if (chip && team.activeChips?.[0] !== chip) team.chipUsage[chip] = (team.chipUsage[chip] ?? 0) + 1;
+  if (chip !== "wildcard" && chip !== "freeHit") {
+    team.transfersThisWeek = (team.transfersThisWeek ?? 0) + incomingCount;
+    const free = team.freeTransfers ?? 1;
+    team.pointsHit = Math.max(0, (team.transfersThisWeek ?? 0) - free) * 4;
+    team.freeTransfers = Math.max(0, free - incomingCount);
+  }
+  team.squadPlayerIds = [...squadPlayerIds];
+  team.squadPlayers = squadPlayers.map((player) => ({ ...player }));
+  team.captainId = captainId;
+  team.viceCaptainId = viceCaptainId;
+  team.activeChips = [...activeChips];
+  team.startingPlayerIds = [...startingPlayerIds];
   db.teams[teamId] = team;
   writeDb(db);
   return team;
