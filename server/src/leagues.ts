@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { nanoid } from "nanoid";
-import { createLeague, getLeague, joinLeague, setTeamPoints, getStandings, updateTeamSquad } from "./store";
+import { createLeague, getLeague, joinLeague, setTeamPoints, getStandings, updateTeamSquad, RosterPlayerSnapshot } from "./store";
 import { calculateServerGameweekPoints, calculateSquadTotal } from "./scoring";
 import { requireAuth } from "./auth";
 
@@ -35,12 +35,13 @@ leaguesRouter.post("/:code/join", requireAuth, (req, res) => {
 });
 
 leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
-  const { squadPlayerIds, startingPlayerIds, captainId, viceCaptainId, activeChips } = req.body as {
+  const { squadPlayerIds, startingPlayerIds, squadPlayers, captainId, viceCaptainId, activeChips } = req.body as {
     squadPlayerIds?: unknown;
     captainId?: unknown;
     viceCaptainId?: unknown;
     activeChips?: unknown;
     startingPlayerIds?: unknown;
+    squadPlayers?: unknown;
   };
 
   if (!Array.isArray(squadPlayerIds) || squadPlayerIds.length !== 15 || !squadPlayerIds.every((id) => Number.isInteger(id) && id > 0)) {
@@ -55,6 +56,40 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
   const uniqueStartingIds = new Set(startingPlayerIds as number[]);
   if (uniqueIds.size !== 15) {
     return res.status(400).json({ error: "squadPlayerIds must contain 15 unique players" });
+  }
+
+  if (!Array.isArray(squadPlayers) || squadPlayers.length !== 15) {
+    return res.status(400).json({ error: "squadPlayers must contain 15 player snapshots" });
+  }
+  const snapshots = squadPlayers as RosterPlayerSnapshot[];
+  const validPositions = new Set(["GK", "DEF", "MID", "FWD"]);
+  if (!snapshots.every((p) =>
+    p && Number.isInteger(p.id) && p.id > 0 &&
+    typeof p.club === "string" && p.club.trim().length > 0 &&
+    validPositions.has(p.pos) &&
+    typeof p.price === "number" && Number.isFinite(p.price) && p.price > 0 &&
+    typeof p.league === "string"
+  )) return res.status(400).json({ error: "Each player snapshot must include valid id, club, position, price, and league" });
+  if (new Set(snapshots.map((p) => p.id)).size !== 15 || snapshots.some((p) => !uniqueIds.has(p.id))) {
+    return res.status(400).json({ error: "Player snapshots must match the 15 unique squad IDs" });
+  }
+  const positionCounts = snapshots.reduce<Record<string, number>>((counts, player) => {
+    counts[player.pos] = (counts[player.pos] ?? 0) + 1;
+    return counts;
+  }, {});
+  if (positionCounts.GK !== 2 || positionCounts.DEF !== 5 || positionCounts.MID !== 5 || positionCounts.FWD !== 3) {
+    return res.status(400).json({ error: "Squad must contain 2 GK, 5 DEF, 5 MID, and 3 FWD players" });
+  }
+  const clubCounts = new Map<string, number>();
+  for (const player of snapshots) {
+    const key = player.clubId != null ? String(player.clubId) : player.club.trim().toLowerCase();
+    clubCounts.set(key, (clubCounts.get(key) ?? 0) + 1);
+  }
+  if ([...clubCounts.values()].some((count) => count > 3)) {
+    return res.status(400).json({ error: "A maximum of 3 players per club is allowed" });
+  }
+  if (snapshots.reduce((sum, player) => sum + player.price, 0) > 105) {
+    return res.status(400).json({ error: "Squad exceeds the 105.0 budget" });
   }
 
   if (uniqueStartingIds.size !== 11 || [...uniqueStartingIds].some((id) => !uniqueIds.has(id))) {
@@ -91,7 +126,8 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
     captainId as number | null,
     viceCaptainId as number | null,
     activeChips as string[],
-    startingPlayerIds as number[]
+    startingPlayerIds as number[],
+    snapshots
   );
   if (!team) return res.status(404).json({ error: "Team not found" });
   res.json(team);
