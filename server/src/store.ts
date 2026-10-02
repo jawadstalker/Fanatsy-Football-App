@@ -129,7 +129,9 @@ export function updateTeamSquad(
   team.activeChips = [...activeChips];
   team.startingPlayerIds = [...startingPlayerIds];
   const previousIds = team.squadPlayerIds ?? [];
-  const incomingCount = squadPlayerIds.filter((id) => !previousIds.includes(id)).length;
+  const incomingCount = previousIds.length === 15
+    ? squadPlayerIds.filter((id) => !previousIds.includes(id)).length
+    : 0;
   const chip = activeChips[0] ?? null;
   team.chipUsage = team.chipUsage ?? {};
   if (chip === "freeHit" && team.activeChips?.[0] !== "freeHit") {
