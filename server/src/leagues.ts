@@ -121,7 +121,6 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
   }
 
   const currentGameweek = Number(process.env.CURRENT_GAMEWEEK ?? 6);
-  const currentTeam = getStandings(code).find((team) => team.id === req.params.teamId)!;
   const previousIds = currentTeam.squadPlayerIds ?? [];
   const incomingIds = (squadPlayerIds as number[]).filter((id) => !previousIds.includes(id));
   const outgoingIds = previousIds.filter((id) => !(squadPlayerIds as number[]).includes(id));
