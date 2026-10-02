@@ -9,7 +9,17 @@ export interface League {
   createdAt: string;
 }
 
+export interface RosterPlayerSnapshot {
+  id: number;
+  clubId?: number;
+  club: string;
+  pos: "GK" | "DEF" | "MID" | "FWD";
+  price: number;
+  league: string;
+}
+
 export interface Team {
+  squadPlayers?: RosterPlayerSnapshot[];
   squadPlayerIds?: number[];
   captainId?: number | null;
   viceCaptainId?: number | null;
@@ -94,7 +104,8 @@ export function updateTeamSquad(
   captainId: number | null,
   viceCaptainId: number | null,
   activeChips: string[],
-  startingPlayerIds: number[]
+  startingPlayerIds: number[],
+  squadPlayers: RosterPlayerSnapshot[]
 ): Team | null {
   const db = readDb();
   const stored = db.teams[teamId];
@@ -102,6 +113,7 @@ export function updateTeamSquad(
 
   const team = normalizeTeam(stored);
   team.squadPlayerIds = [...squadPlayerIds];
+  team.squadPlayers = squadPlayers.map((player) => ({ ...player }));
   team.captainId = captainId;
   team.viceCaptainId = viceCaptainId;
   team.activeChips = [...activeChips];
