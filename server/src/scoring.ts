@@ -73,6 +73,9 @@ export async function calculateServerGameweekPoints(ids:number[],gameweek:number
       for(const block of data.response) for(const p of block.players){
         if(!ids.includes(p.player.id))continue;
         const s=p.statistics[0]; if(!s)continue;
+        // A player with zero minutes did not appear; omitting them lets the
+        // captain/vice-captain fallback distinguish a no-show from 0 points.
+        if ((s.games.minutes ?? 0) <= 0) continue;
         const pos=POSITIONS[s.games.position??""]; if(!pos)continue;
         totals.set(p.player.id,(totals.get(p.player.id)??0)+score(s,pos,conceded[block.team.id]??0));
       }
