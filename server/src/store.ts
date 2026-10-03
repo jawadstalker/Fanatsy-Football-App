@@ -182,6 +182,21 @@ export function setTeamPoints(teamId: string, gameweek: number, gwPoints: number
   team.totalPoints += gwPoints;
   team.submittedGameweeks.push(gameweek);
   team.submittedGameweeks.sort((a, b) => a - b);
+
+  // A gameweek submission finalizes weekly transfer/chip state.
+  if (team.activeChips?.[0] === "freeHit" && team.freeHitSnapshot) {
+    team.squadPlayerIds = [...team.freeHitSnapshot.squadPlayerIds];
+    team.squadPlayers = team.freeHitSnapshot.squadPlayers.map((player) => ({ ...player }));
+    team.startingPlayerIds = [...team.freeHitSnapshot.startingPlayerIds];
+    team.captainId = team.freeHitSnapshot.captainId;
+    team.viceCaptainId = team.freeHitSnapshot.viceCaptainId;
+    team.freeHitSnapshot = null;
+  }
+  team.activeChips = [];
+  team.transfersThisWeek = 0;
+  team.pointsHit = 0;
+  team.freeTransfers = Math.min(2, (team.freeTransfers ?? 1) + 1);
+
   db.teams[teamId] = team;
   writeDb(db);
   return { team, duplicate: false };
