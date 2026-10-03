@@ -8,6 +8,10 @@ import { colors, LEAGUES, leagueColor } from "@/theme/tokens";
 import { MARKET } from "@/data/sample";
 import { usePlayers } from "@/hooks/usePlayers";
 import { useTeamStore } from "@/store/useTeamStore";
+import { useLeagueStore } from "@/store/useLeagueStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import * as backend from "@/api/backendClient";
+import { getBackendUrl } from "@/config/backend";
 import { LeagueId, MarketPlayer } from "@/types";
 
 export function TransfersScreen() {
@@ -24,9 +28,37 @@ export function TransfersScreen() {
   const squad = useTeamStore((s) => s.squad);
   const freeTransfers = useTeamStore((s) => s.freeTransfers);
   const locked = useTeamStore((s) => s.isLocked());
+  const saveSquad = useLeagueStore((s) => s.saveSquad);
+  const leagueCode = useLeagueStore((s) => s.leagueCode);
+  const teamId = useLeagueStore((s) => s.teamId);
+  const token = useAuthStore((s) => s.token);
+  const [transferring, setTransferring] = useState(false);
 
-  const handleAdd = (player: MarketPlayer) => {
+  const handleAdd = async (player: MarketPlayer) => {
+    if (getBackendUrl() && squad.length >= 15) {
+      if (!leagueCode || !teamId || !token || outgoingId == null) {
+        setFeedback("Join a private league and select a player to sell first");
+        return;
+      }
+      setTransferring(true);
+      try {
+        const saved = await saveSquad();
+        if (!saved) throw new Error("Could not sync your squad with the server");
+        await backend.submitTransfer(
+          leagueCode,
+          teamId,
+          outgoingId,
+          { id: player.id, clubId: player.clubId, club: player.club, pos: player.pos, price: player.price, league: player.league },
+          token
+        );
+      } catch (error) {
+        setFeedback((error as Error).message || "Transfer failed on server");
+        setTransferring(false);
+        return;
+      }
+    }
     const result = addPlayer(player, outgoingId ?? undefined);
+    setTransferring(false);
     if (result.ok) {
       setFeedback(result.replaced ? `${player.name} replaced ${result.replaced}` : `${player.name} added`);
       setOutgoingId(null);
@@ -138,7 +170,10 @@ export function TransfersScreen() {
               inSquad={isInSquad(item.id)}
               outgoingId={outgoingId}
               canReplace={outgoingId !== null && squad.some((p) => p.id === outgoingId && p.pos === item.pos)}
-              locked={locked}
+              locked={locked || transferring}
+              transferring={transferring}
+              outgoingId={outgoingId}
+              canReplace={outgoingId !== null && squad.some((p) => p.id === outgoingId && p.pos === item.pos)}
               onAdd={() => handleAdd(item)}
               onPress={() => setSelected(item)}
             />
@@ -155,12 +190,18 @@ function MarketRow({
   player: p,
   inSquad,
   locked,
+  transferring,
+  outgoingId,
+  canReplace,
   onAdd,
   onPress,
 }: {
   player: MarketPlayer;
   inSquad: boolean;
   locked: boolean;
+  transferring: boolean;
+  outgoingId: number | null;
+  canReplace: boolean;
   onAdd: () => void;
   onPress: () => void;
 }) {
@@ -197,7 +238,7 @@ function MarketRow({
           className="w-7 h-7 rounded-full items-center justify-center"
           style={{ backgroundColor: inSquad || locked ? colors.line : colors.turf }}
         >
-          {inSquad ? <Check size={15} color={colors.muted} /> : <Plus size={15} color={locked ? colors.muted : colors.base} />}
+          {inSquad ? <Check size={15} color={colors.muted} /> : transferring ? <ActivityIndicator size="small" color={colors.base} /> : <Plus size={15} color={locked ? colors.muted : colors.base} />}
         </Pressable>
       </View>
     </Pressable>
