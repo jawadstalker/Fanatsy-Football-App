@@ -28,7 +28,6 @@ export function TransfersScreen() {
   const squad = useTeamStore((s) => s.squad);
   const freeTransfers = useTeamStore((s) => s.freeTransfers);
   const locked = useTeamStore((s) => s.isLocked());
-  const saveSquad = useLeagueStore((s) => s.saveSquad);
   const leagueCode = useLeagueStore((s) => s.leagueCode);
   const teamId = useLeagueStore((s) => s.teamId);
   const token = useAuthStore((s) => s.token);
@@ -42,8 +41,6 @@ export function TransfersScreen() {
       }
       setTransferring(true);
       try {
-        const saved = await saveSquad();
-        if (!saved) throw new Error("Could not sync your squad with the server");
         await backend.submitTransfer(
           leagueCode,
           teamId,
