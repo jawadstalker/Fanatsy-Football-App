@@ -125,6 +125,9 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
   const incomingIds = (squadPlayerIds as number[]).filter((id) => !previousIds.includes(id));
   const outgoingIds = previousIds.filter((id) => !(squadPlayerIds as number[]).includes(id));
   const hasRosterChange = incomingIds.length > 0 || outgoingIds.length > 0;
+  if (currentTeam.squadPlayerIds?.length === 15 && hasRosterChange) {
+    return res.status(400).json({ error: "Use the transfers endpoint to change a saved squad" });
+  }
   const requestedChip = (activeChips as string[])[0] ?? null;
   const currentActiveChip = currentTeam.activeChips?.[0] ?? null;
   const chipUsage = currentTeam.chipUsage ?? {};
