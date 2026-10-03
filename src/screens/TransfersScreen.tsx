@@ -168,8 +168,6 @@ export function TransfersScreen() {
             <MarketRow
               player={item}
               inSquad={isInSquad(item.id)}
-              outgoingId={outgoingId}
-              canReplace={outgoingId !== null && squad.some((p) => p.id === outgoingId && p.pos === item.pos)}
               locked={locked || transferring}
               transferring={transferring}
               outgoingId={outgoingId}
