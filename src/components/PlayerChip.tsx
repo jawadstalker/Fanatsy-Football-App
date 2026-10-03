@@ -27,16 +27,16 @@ export function PlayerChip({
       style={{
         left: `${p.x ?? 50}%`,
         top: `${p.y ?? 50}%`,
-        transform: [{ translateX: -18 }, { translateY: -18 }],
+        transform: [{ translateX: -21 }, { translateY: -21 }],
       }}
     >
       <View className="relative">
         <Pressable onPress={onPress} onLongPress={onPressViceCaptain}>
           <View
-            className="w-9 h-9 rounded-full items-center justify-center"
+            className="w-[42px] h-[42px] rounded-full items-center justify-center"
             style={{
               backgroundColor: colors.elevated,
-              borderWidth: 2,
+              borderWidth: 1.5,
               borderColor: highlight ? colors.gold : leagueColor(p.league),
             }}
           >
@@ -46,14 +46,14 @@ export function PlayerChip({
         <Pressable
           onPress={onPressCaptain}
           hitSlop={8}
-          className="absolute -top-1 -right-1 w-4 h-4 rounded-full items-center justify-center"
+          className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full items-center justify-center"
           style={{ backgroundColor: isCaptain ? colors.gold : colors.surface }}
         >
-          <Star size={10} color={isCaptain ? colors.base : colors.muted} fill={isCaptain ? colors.base : "transparent"} />
+          <Star size={10} strokeWidth={1.8} color={isCaptain ? colors.base : colors.muted} fill={isCaptain ? colors.base : "transparent"} />
         </Pressable>
         {isViceCaptain && (
           <View
-            className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full items-center justify-center border"
+            className="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full items-center justify-center border"
             style={{ backgroundColor: colors.surface, borderColor: colors.turf }}
           >
             <Text className="text-[8px] font-display-bold" style={{ color: colors.turf }}>
@@ -63,8 +63,8 @@ export function PlayerChip({
         )}
       </View>
       <Pressable onPress={onPress}>
-        <View className="mt-1 px-1.5 py-0.5">
-          <Text className="text-[10px] font-body-medium text-ink">{p.name}</Text>
+        <View className="mt-1 px-1.5 py-0.5 rounded-sm">
+          <Text numberOfLines={1} className="text-[10px] font-body-medium text-ink text-center" style={{ maxWidth: 76 }}>{p.name}</Text>
         </View>
         <Text className="text-[10px] font-body-medium mt-0.5 text-center" style={{ color: colors.gold }}>
           {p.pts} pts
