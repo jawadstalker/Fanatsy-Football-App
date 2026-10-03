@@ -146,11 +146,19 @@ export function updateTeamSquad(
     team.chipUsage[previousActiveChips[0]] = team.chipUsage[previousActiveChips[0]] ?? 1;
   }
   if (chip && previousActiveChips[0] !== chip) team.chipUsage[chip] = (team.chipUsage[chip] ?? 0) + 1;
-  if (chip !== "wildcard" && chip !== "freeHit") {
+  if (chip !== "wildcard" && chip !== "freeHit" && incomingCount > 0) {
     team.transfersThisWeek = (team.transfersThisWeek ?? 0) + incomingCount;
-    const free = team.freeTransfers ?? 1;
-    team.pointsHit = Math.max(0, (team.transfersThisWeek ?? 0) - free) * 4;
-    team.freeTransfers = Math.max(0, free - incomingCount);
+
+    // Spend available free transfers first; each transfer after that adds
+    // one 4-point hit. Keep pointsHit cumulative for this gameweek.
+    let free = Math.max(0, team.freeTransfers ?? 1);
+    let pointsHit = Math.max(0, team.pointsHit ?? 0);
+    for (let i = 0; i < incomingCount; i += 1) {
+      if (free > 0) free -= 1;
+      else pointsHit += 4;
+    }
+    team.freeTransfers = free;
+    team.pointsHit = pointsHit;
   }
   team.squadPlayerIds = [...squadPlayerIds];
   team.squadPlayers = squadPlayers.map((player) => ({ ...player }));
