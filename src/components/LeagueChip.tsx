@@ -40,7 +40,7 @@ export function AllLeaguesChip({ active, onPress }: { active: boolean; onPress: 
         borderColor: active ? colors.turf : "transparent",
       }}
     >
-      <Text className="text-xs font-body" style={{ color: active ? colors.base : colors.muted }}>
+      <Text className="text-xs font-body" style={{ color: active ? colors.turf : colors.muted }}>
         All Leagues
       </Text>
     </Pressable>
