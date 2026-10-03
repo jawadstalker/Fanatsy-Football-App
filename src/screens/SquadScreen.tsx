@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, useWindowDimensions } from "react-native";
 import { Wallet, RefreshCw } from "lucide-react-native";
 import { TopBar } from "@/components/TopBar";
 import { PlayerChip } from "@/components/PlayerChip";
@@ -10,8 +10,7 @@ import { useTeamStore } from "@/store/useTeamStore";
 import { useGameweekSync } from "@/hooks/useGameweekSync";
 import { ChipId, SquadPlayer } from "@/types";
 
-const PITCH_HEIGHT = 300;
-const STRIPE_COUNT = 9;
+const STRIPE_COUNT = 10;
 
 const CHIP_LABELS: Record<ChipId, string> = {
   wildcard: "Wildcard",
@@ -21,6 +20,8 @@ const CHIP_LABELS: Record<ChipId, string> = {
 };
 
 export function SquadScreen() {
+  const { width: windowWidth } = useWindowDimensions();
+  const pitchHeight = Math.max(300, Math.min(390, (windowWidth - 32) * 0.94));
   const squad = useTeamStore((s) => s.squad);
   const captainId = useTeamStore((s) => s.captainId);
   const viceCaptainId = useTeamStore((s) => s.viceCaptainId);
@@ -151,20 +152,20 @@ export function SquadScreen() {
       <View
         ref={pitchRef}
         collapsable={false}
-        className="mx-4 rounded-xl overflow-hidden relative"
-        style={{ height: PITCH_HEIGHT }}
+        className="mx-4 rounded-lg overflow-hidden relative border"
+        style={{ height: pitchHeight, borderColor: "rgba(255,255,255,0.22)" }}
       >
         <View className="absolute inset-0 flex-col">
           {Array.from({ length: STRIPE_COUNT }).map((_, i) => (
             <View
               key={i}
-              style={{ flex: 1, backgroundColor: i % 2 === 0 ? colors.turf : colors.turfDim }}
+              style={{ flex: 1, backgroundColor: i % 2 === 0 ? "#397448" : "#346B42" }}
             />
           ))}
         </View>
         <View
           className="absolute left-0 right-0"
-          style={{ top: "50%", height: 1.5, backgroundColor: "rgba(255,255,255,0.35)" }}
+          style={{ top: "50%", height: 1, backgroundColor: "rgba(255,255,255,0.38)" }}
         />
         <View
           className="absolute rounded-full"
@@ -179,6 +180,10 @@ export function SquadScreen() {
             borderColor: "rgba(255,255,255,0.35)",
           }}
         />
+        <View className="absolute self-center" style={{ top: 0, width: "48%", height: "14%", borderWidth: 1, borderTopWidth: 0, borderColor: "rgba(255,255,255,0.32)" }} />
+        <View className="absolute self-center" style={{ bottom: 0, width: "48%", height: "14%", borderWidth: 1, borderBottomWidth: 0, borderColor: "rgba(255,255,255,0.32)" }} />
+        <View className="absolute self-center" style={{ top: 0, width: "24%", height: "5%", borderWidth: 1, borderTopWidth: 0, borderColor: "rgba(255,255,255,0.32)" }} />
+        <View className="absolute self-center" style={{ bottom: 0, width: "24%", height: "5%", borderWidth: 1, borderBottomWidth: 0, borderColor: "rgba(255,255,255,0.32)" }} />
         {starting.map((p) => (
           <PlayerChip
             key={p.id}
