@@ -247,7 +247,9 @@ leaguesRouter.post("/:code/teams/:teamId/calculate-points", requireAuth, async (
       team.activeChips ?? [],
       team.startingPlayerIds ?? []
     );
-    const result=setTeamPoints(team.id,gameweek,total);
+    // Transfer penalties are applied server-side exactly once at submission.
+    const netTotal = total - (team.pointsHit ?? 0);
+    const result=setTeamPoints(team.id,gameweek,netTotal);
     if(!result.team)return res.status(404).json({error:"Team not found"});
     if(result.duplicate)return res.status(409).json({error:`Points already submitted for gameweek ${gameweek}`,team:result.team});
     return res.json(result.team);
