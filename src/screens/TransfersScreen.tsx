@@ -165,6 +165,12 @@ export function TransfersScreen() {
           data={players}
           keyExtractor={(p) => String(p.id)}
           contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 24 }}
+          ListEmptyComponent={
+            <View className="py-12 items-center">
+              <Text className="text-sm font-body-medium text-ink">No players found</Text>
+              <Text className="text-xs font-body text-muted mt-1">Try another name or club.</Text>
+            </View>
+          }
           renderItem={({ item }) => (
             <MarketRow
               player={item}
