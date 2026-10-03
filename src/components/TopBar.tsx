@@ -6,7 +6,7 @@ export function TopBar({
   title,
   sub,
   pointsLabel = "GW points",
-  points = 0,
+  points,
 }: {
   title: string;
   sub?: string;
@@ -23,15 +23,17 @@ export function TopBar({
           </Text>
         ) : null}
       </View>
-      <View
-        className="pl-3 border-l items-end"
-        style={{ borderLeftColor: colors.line }}
-      >
-        <Text className="text-[10px] font-body text-muted">{pointsLabel}</Text>
-        <Text className="text-xl font-display-bold mt-0.5" style={{ color: colors.gold }}>
-          {points}
-        </Text>
-      </View>
+      {points !== undefined ? (
+        <View
+          className="pl-3 border-l items-end"
+          style={{ borderLeftColor: colors.line }}
+        >
+          <Text className="text-[10px] font-body text-muted">{pointsLabel}</Text>
+          <Text className="text-xl font-display-bold mt-0.5" style={{ color: colors.gold }}>
+            {points}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
