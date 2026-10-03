@@ -16,13 +16,13 @@ export function LeagueChip({
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border mr-2"
+      className="flex-row items-center gap-2 px-3 py-2 border-b-2 mr-2"
       style={{
-        backgroundColor: active ? colors.elevated : colors.surface,
+        backgroundColor: "transparent",
         borderColor: active ? color : colors.line,
       }}
     >
-      <View className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+      <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
       <Text className="text-xs font-body" style={{ color: active ? colors.ink : colors.muted }}>
         {label}
       </Text>
@@ -34,10 +34,10 @@ export function AllLeaguesChip({ active, onPress }: { active: boolean; onPress: 
   return (
     <Pressable
       onPress={onPress}
-      className="px-3 py-1.5 rounded-full border mr-2"
+      className="px-3 py-2 border-b-2 mr-2"
       style={{
-        backgroundColor: active ? colors.turf : colors.surface,
-        borderColor: active ? colors.turf : colors.line,
+        backgroundColor: "transparent",
+        borderColor: active ? colors.turf : "transparent",
       }}
     >
       <Text className="text-xs font-body" style={{ color: active ? colors.base : colors.muted }}>
