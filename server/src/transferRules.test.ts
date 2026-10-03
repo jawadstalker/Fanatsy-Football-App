@@ -1,0 +1,38 @@
+import { strict as assert } from "node:assert";
+import { test } from "node:test";
+import { calculateTransferAccounting } from "./transferRules";
+
+test("one free transfer consumes the allowance without a hit", () => {
+  assert.deepEqual(calculateTransferAccounting(1, 1, 0, 0, false), {
+    transfersThisWeek: 1, freeTransfers: 0, pointsHit: 0,
+  });
+});
+
+test("second transfer costs four points, not eight", () => {
+  const first = calculateTransferAccounting(1, 1, 0, 0, false);
+  assert.deepEqual(calculateTransferAccounting(1, first.freeTransfers, first.pointsHit, first.transfersThisWeek, false), {
+    transfersThisWeek: 2, freeTransfers: 0, pointsHit: 4,
+  });
+});
+
+test("third transfer adds another four points", () => {
+  assert.deepEqual(calculateTransferAccounting(1, 0, 4, 2, false), {
+    transfersThisWeek: 3, freeTransfers: 0, pointsHit: 8,
+  });
+});
+
+test("multiple transfers consume free transfers before charging", () => {
+  assert.deepEqual(calculateTransferAccounting(3, 2, 0, 0, false), {
+    transfersThisWeek: 3, freeTransfers: 0, pointsHit: 4,
+  });
+});
+
+test("Wildcard and Free Hit transfers do not change charges", () => {
+  assert.deepEqual(calculateTransferAccounting(3, 1, 4, 2, true), {
+    transfersThisWeek: 5, freeTransfers: 1, pointsHit: 4,
+  });
+});
+
+test("negative transfer count is rejected", () => {
+  assert.throws(() => calculateTransferAccounting(-1, 1, 0, 0, false));
+});
