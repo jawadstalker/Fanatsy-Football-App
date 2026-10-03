@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { createLeague, getLeague, joinLeague, setTeamPoints, getStandings, updateTeamSquad, RosterPlayerSnapshot } from "./store";
 import { calculateServerGameweekPoints, calculateSquadTotal } from "./scoring";
 import { requireAuth } from "./auth";
+import { getAuthoritativePlayer } from "./footballProxy";
 
 export const leaguesRouter = Router();
 
@@ -185,7 +186,27 @@ leaguesRouter.post("/:code/teams/:teamId/transfers", requireAuth, (req, res) => 
       typeof incomingPlayer.club !== "string" || !incomingPlayer.club.trim() ||
       typeof incomingPlayer.price !== "number" || !Number.isFinite(incomingPlayer.price) || incomingPlayer.price <= 0 ||
       typeof incomingPlayer.league !== "string") return res.status(400).json({ error: "Incoming player metadata is invalid" });
-  if (outgoing.pos !== incomingPlayer.pos) return res.status(400).json({ error: "Transfers must preserve the player's position" });
+
+  let authoritative;
+  try {
+    authoritative = await getAuthoritativePlayer(incomingPlayer.id);
+  } catch (err) {
+    return res.status(502).json({ error: "Could not verify incoming player", detail: (err as Error).message });
+  }
+  if (!authoritative) return res.status(400).json({ error: "Incoming player is not available in the current fantasy leagues" });
+  if (
+    authoritative.clubId !== incomingPlayer.clubId ||
+    authoritative.club !== incomingPlayer.club ||
+    authoritative.pos !== incomingPlayer.pos ||
+    authoritative.league !== incomingPlayer.league ||
+    authoritative.price !== incomingPlayer.price
+  ) {
+    return res.status(409).json({
+      error: "Incoming player data does not match the server market",
+      player: authoritative,
+    });
+  }
+  if (outgoing.pos !== authoritative.pos) return res.status(400).json({ error: "Transfers must preserve the player's position" });
 
   const currentGameweek = Number(process.env.CURRENT_GAMEWEEK ?? 6);
   if (team.submittedGameweeks.includes(currentGameweek)) return res.status(409).json({ error: "Transfers are locked after gameweek submission" });
