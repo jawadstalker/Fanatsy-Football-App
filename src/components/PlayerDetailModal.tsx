@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, View, Text, Pressable, ScrollView } from "react-native";
-import { Shirt, X } from "lucide-react-native";
+import { X } from "lucide-react-native";
 import { colors, leagueColor, LEAGUES } from "@/theme/tokens";
 import { getPlayerStats } from "@/data/playerStats";
 import { LeagueId, Position } from "@/types";
@@ -61,12 +61,12 @@ export function PlayerDetailModal({
               {/* header */}
               <View className="items-center mb-4">
                 <View
-                  className="w-20 h-20 rounded-full items-center justify-center border-4 mb-2"
+                  className="w-16 h-16 rounded-full items-center justify-center border-2 mb-3"
                   style={{ backgroundColor: colors.elevated, borderColor: leagueColor(player.league) }}
                 >
-                  <Shirt size={32} color={colors.ink} />
+                  <Text className="text-2xl font-display-bold" style={{ color: colors.ink }}>{player.pos}</Text>
                 </View>
-                <Text className="text-xl font-display-bold text-ink">{player.name}</Text>
+                <Text className="text-xl font-body-medium text-ink">{player.name}</Text>
                 <Text className="text-sm font-body text-muted">
                   {player.club} · {player.pos}
                 </Text>
@@ -154,7 +154,7 @@ export function PlayerDetailModal({
 function Pill({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <View
-      className="flex-1 rounded-lg py-2 items-center border"
+      className="flex-1 rounded-md py-3 items-center border"
       style={{ backgroundColor: colors.surface, borderColor: colors.line }}
     >
       <Text
@@ -171,7 +171,7 @@ function Pill({ label, value, highlight }: { label: string; value: string; highl
 function StatBox({ label, value }: { label: string; value: number }) {
   return (
     <View
-      className="rounded-lg px-3 py-2 border"
+      className="rounded-md px-3 py-3 border"
       style={{ backgroundColor: colors.surface, borderColor: colors.line, width: "31%" }}
     >
       <Text className="text-sm font-display-bold text-ink">{value}</Text>
