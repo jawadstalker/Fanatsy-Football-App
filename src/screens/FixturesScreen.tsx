@@ -71,8 +71,8 @@ function FixtureRow({ fixture: f }: { fixture: Fixture }) {
 
   return (
     <View
-      className="rounded-xl px-3 py-3 border"
-      style={{ backgroundColor: colors.surface, borderColor: live ? colors.gold : colors.line }}
+      className="px-1 py-3 border-b"
+      style={{ backgroundColor: colors.base, borderColor: live ? colors.gold : colors.line }}
     >
       <View className="flex-row items-center justify-between mb-1">
         <Text className="text-[10px] font-body text-muted">{formatDate(f.date)}</Text>
@@ -83,7 +83,7 @@ function FixtureRow({ fixture: f }: { fixture: Fixture }) {
         )}
       </View>
       <View className="flex-row items-center justify-between">
-        <Text className="text-sm font-display text-ink flex-1" numberOfLines={1}>
+        <Text className="text-sm font-body-medium text-ink flex-1" numberOfLines={1}>
           {f.homeTeam}
         </Text>
         {played || live ? (
@@ -93,7 +93,7 @@ function FixtureRow({ fixture: f }: { fixture: Fixture }) {
         ) : (
           <Text className="text-xs font-display text-muted mx-3">{formatTime(f.date)}</Text>
         )}
-        <Text className="text-sm font-display text-ink flex-1 text-right" numberOfLines={1}>
+        <Text className="text-sm font-body-medium text-ink flex-1 text-right" numberOfLines={1}>
           {f.awayTeam}
         </Text>
       </View>
