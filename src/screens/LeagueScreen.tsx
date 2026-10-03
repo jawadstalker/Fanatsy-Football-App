@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
-import { ChevronUp, ChevronDown, Minus, Copy, LogOut } from "lucide-react-native";
+import { ChevronUp, ChevronDown, Minus, LogOut } from "lucide-react-native";
 import { TopBar } from "@/components/TopBar";
 import { LeagueSetupForm } from "@/components/LeagueSetupForm";
 import { AuthForm } from "@/components/AuthForm";
@@ -163,16 +163,16 @@ function RealLeagueView() {
         <Text className="text-[11px] font-body text-muted">Sign out {username ? `(${username})` : ""}</Text>
       </Pressable>
 
-      <Pressable
-        className="mx-4 mb-3 px-3 py-2 rounded-lg flex-row items-center justify-between border"
+      <View
+        className="mx-4 mb-3 px-3 py-3 rounded-lg flex-row items-center justify-between border"
         style={{ backgroundColor: colors.surface, borderColor: colors.line }}
       >
         <Text className="text-xs font-body text-muted">League code</Text>
         <View className="flex-row items-center gap-1.5">
           <Text className="text-sm font-display-bold text-ink">{league.leagueCode}</Text>
-          <Copy size={12} color={colors.muted} />
+
         </View>
-      </Pressable>
+      </View>
 
       <Pressable
         onPress={async () => {
@@ -181,7 +181,7 @@ function RealLeagueView() {
           await league.submitPoints(gameweekTotal);
           setSubmitted(true);
         }}
-        className="mx-4 mb-3 rounded-lg py-2.5 items-center"
+        className="mx-4 mb-3 rounded-lg py-3 items-center"
         style={{ backgroundColor: colors.turf }}
       >
         <Text className="text-sm font-body-medium" style={{ color: colors.base }}>
@@ -227,7 +227,7 @@ function RealRankRow({ team, index, isMe }: { team: BackendTeam; index: number; 
       <View className="flex-row items-center gap-3">
         <Text className="w-6 text-center text-sm font-display-bold text-ink">{index + 1}</Text>
         <View>
-          <Text className="text-sm font-body text-ink">{team.managerName}</Text>
+          <Text className="text-sm font-body-medium text-ink">{team.managerName}</Text>
           <Text className="text-[10px] font-body text-muted">GW: {team.gwPoints} pts</Text>
         </View>
       </View>
