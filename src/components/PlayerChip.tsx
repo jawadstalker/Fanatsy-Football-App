@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { Shirt, Star } from "lucide-react-native";
+import { Star } from "lucide-react-native";
 import { colors, leagueColor } from "@/theme/tokens";
 import { SquadPlayer } from "@/types";
 
@@ -40,7 +40,7 @@ export function PlayerChip({
               borderColor: highlight ? colors.gold : leagueColor(p.league),
             }}
           >
-            <Shirt size={16} color={colors.ink} />
+            <Text className="text-[9px] font-display-bold" style={{ color: colors.ink }}>{p.pos}</Text>
           </View>
         </Pressable>
         <Pressable
@@ -63,10 +63,10 @@ export function PlayerChip({
         )}
       </View>
       <Pressable onPress={onPress}>
-        <View className="mt-1 px-1.5 py-0.5 rounded bg-surface">
-          <Text className="text-[10px] font-display text-ink">{p.name}</Text>
+        <View className="mt-1 px-1.5 py-0.5">
+          <Text className="text-[10px] font-body-medium text-ink">{p.name}</Text>
         </View>
-        <Text className="text-[10px] font-display-bold mt-0.5 text-center" style={{ color: colors.gold }}>
+        <Text className="text-[10px] font-body-medium mt-0.5 text-center" style={{ color: colors.gold }}>
           {p.pts} pts
         </Text>
       </Pressable>
