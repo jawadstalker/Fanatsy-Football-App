@@ -40,5 +40,20 @@ export function saveSquad(
   );
 }
 
+
+export function submitTransfer(
+  code: string,
+  teamId: string,
+  outgoingPlayerId: number,
+  incomingPlayer: { id: number; clubId?: number; club: string; pos: "GK" | "DEF" | "MID" | "FWD"; price: number; league: string },
+  token: string
+): Promise<BackendTeam & { transferCost?: number; pointsHit?: number }> {
+  return request(
+    `/api/leagues/${encodeURIComponent(code)}/teams/${encodeURIComponent(teamId)}/transfers`,
+    { method: "POST", body: JSON.stringify({ outgoingPlayerId, incomingPlayer }) },
+    token
+  );
+}
+
 export function calculateAndSubmitPoints(code:string,teamId:string,gameweek:number,token:string):Promise<BackendTeam>{return request(`/api/leagues/${encodeURIComponent(code)}/teams/${encodeURIComponent(teamId)}/calculate-points`,{method:"POST",body:JSON.stringify({gameweek})},token)}
 export function getStandings(code:string, token:string):Promise<BackendTeam[]>{return request(`/api/leagues/${encodeURIComponent(code)}/standings`,{},token)}
