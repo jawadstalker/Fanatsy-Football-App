@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, FlatList, ScrollView, Pressable, ActivityIndicator } from "react-native";
-import { Search, Shirt, Plus, Check, ArrowLeftRight } from "lucide-react-native";
+import { View, Text, TextInput, FlatList, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { Search, Plus, Check, ArrowLeftRight } from "lucide-react-native";
 import { TopBar } from "@/components/TopBar";
 import { AllLeaguesChip, LeagueChip } from "@/components/LeagueChip";
 import { PlayerDetailModal, DetailPlayer } from "@/components/PlayerDetailModal";
@@ -19,9 +19,12 @@ export function TransfersScreen() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selected, setSelected] = useState<DetailPlayer | null>(null);
   const [outgoingId, setOutgoingId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
 
   const live = usePlayers(active === "all" ? "epl" : active);
-  const players: MarketPlayer[] = active === "all" ? MARKET : live.players;
+  const players: MarketPlayer[] = (active === "all" ? MARKET : live.players).filter((player) =>
+    `${player.name} ${player.club}`.toLowerCase().includes(search.trim().toLowerCase())
+  );
 
   const addPlayer = useTeamStore((s) => s.addPlayer);
   const isInSquad = useTeamStore((s) => s.isInSquad);
@@ -90,23 +93,24 @@ export function TransfersScreen() {
       )}
 
       {squad.length >= 15 && (
-        <View className="mx-4 mb-2 px-3 py-2 rounded-lg border" style={{ backgroundColor: colors.surface, borderColor: colors.line }}>
+        <View className="mx-4 mb-3 px-3 py-3 rounded-lg border" style={{ backgroundColor: colors.surface, borderColor: colors.line }}>
           <View className="flex-row items-center gap-2 mb-2">
             <ArrowLeftRight size={14} color={colors.turf} />
-            <Text className="text-xs font-body-medium text-ink">Select a player to sell</Text>
+            <Text className="text-xs font-body-medium text-ink">Transfer out</Text>
+            <Text className="text-[10px] font-body text-muted ml-auto">{outgoingId == null ? "Choose a player" : "1 selected"}</Text>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
             {squad.map((p) => (
               <Pressable
                 key={p.id}
                 onPress={() => setOutgoingId(outgoingId === p.id ? null : p.id)}
-                className="px-2.5 py-1.5 rounded-lg border"
+                className="px-3 py-2 rounded-md border"
                 style={{
                   backgroundColor: outgoingId === p.id ? colors.elevated : colors.base,
                   borderColor: outgoingId === p.id ? colors.turf : colors.line,
                 }}
               >
-                <Text className="text-[10px] font-body text-ink">{p.name}</Text>
+                <Text className="text-[11px] font-body-medium text-ink">{p.name}</Text>
                 <Text className="text-[9px] font-body text-muted">{p.pos} · €{p.price.toFixed(1)}m</Text>
               </Pressable>
             ))}
@@ -116,11 +120,11 @@ export function TransfersScreen() {
 
       <View className="px-4 mb-2">
         <View
-          className="flex-row items-center gap-2 px-3 py-2 rounded-lg border"
+          className="flex-row items-center gap-2 px-3 py-3 rounded-lg border"
           style={{ backgroundColor: colors.surface, borderColor: colors.line }}
         >
           <Search size={14} color={colors.muted} />
-          <Text className="text-xs font-body text-muted">Search player or club...</Text>
+          <TextInput value={search} onChangeText={setSearch} placeholder="Search players or clubs" placeholderTextColor={colors.muted} autoCapitalize="none" className="flex-1 text-sm font-body" style={{ color: colors.ink, padding: 0 }} />
         </View>
       </View>
 
@@ -160,7 +164,7 @@ export function TransfersScreen() {
         <FlatList
           data={players}
           keyExtractor={(p) => String(p.id)}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 16 }}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 24 }}
           renderItem={({ item }) => (
             <MarketRow
               player={item}
@@ -203,24 +207,19 @@ function MarketRow({
   return (
     <Pressable
       onPress={onPress}
-      className="rounded-xl px-3 py-2.5 flex-row items-center justify-between border"
-      style={{ backgroundColor: colors.surface, borderColor: colors.line }}
+      className="px-1 py-3 flex-row items-center justify-between border-b"
+      style={{ backgroundColor: colors.base, borderColor: colors.line }}
     >
-      <View className="flex-row items-center gap-2.5">
-        <View
-          className="w-9 h-9 rounded-full items-center justify-center border-2"
-          style={{ backgroundColor: colors.elevated, borderColor: leagueColor(p.league) }}
-        >
-          <Shirt size={16} color={colors.ink} />
-        </View>
+      <View className="flex-row items-center gap-3 flex-1">
+        <View className="w-1 h-9 rounded-full" style={{ backgroundColor: leagueColor(p.league) }} />
         <View>
-          <Text className="text-sm font-display text-ink">{p.name}</Text>
+          <Text className="text-sm font-body-medium text-ink">{p.name}</Text>
           <Text className="text-[11px] font-body text-muted">
             {p.club} · {p.pos}
           </Text>
         </View>
       </View>
-      <View className="flex-row items-center gap-3">
+      <View className="flex-row items-center gap-3 ml-2">
         <View>
           <Text className="text-sm font-display-bold text-right" style={{ color: colors.gold }}>
             €{p.price.toFixed(1)}m
@@ -230,7 +229,7 @@ function MarketRow({
         <Pressable
           onPress={onAdd}
           disabled={inSquad || locked || (outgoingId !== null && !canReplace)}
-          className="w-7 h-7 rounded-full items-center justify-center"
+          className="w-8 h-8 rounded-md items-center justify-center"
           style={{ backgroundColor: inSquad || locked ? colors.line : colors.turf }}
         >
           {inSquad ? <Check size={15} color={colors.muted} /> : transferring ? <ActivityIndicator size="small" color={colors.base} /> : <Plus size={15} color={locked ? colors.muted : colors.base} />}
