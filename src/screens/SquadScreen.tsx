@@ -69,9 +69,9 @@ export function SquadScreen() {
         </View>
       )}
 
-      <View className="px-4 flex-row items-center gap-2 mb-2">
-        <View className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface">
-          <Wallet size={13} color={colors.turf} />
+      <View className="px-4 flex-row items-center gap-3 mb-3">
+        <View className="flex-row items-center gap-1.5 py-1">
+          <Wallet size={14} color={colors.muted} strokeWidth={1.7} />
           <Text className="text-xs font-body text-ink">
             Bank: <Text className="font-display">€{bank.toFixed(1)}m</Text>
           </Text>
@@ -86,15 +86,15 @@ export function SquadScreen() {
             setDismissedError(false);
             sync();
           }}
-          className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg"
-          style={{ backgroundColor: colors.elevated }}
+          className="flex-row items-center gap-1.5 py-1 border-l pl-3"
+          style={{ borderLeftColor: colors.line }}
         >
           {syncing ? (
             <ActivityIndicator size="small" color={colors.turf} />
           ) : (
             <RefreshCw size={13} color={colors.turf} />
           )}
-          <Text className="text-xs font-body text-ink">Points</Text>
+          <Text className="text-xs font-body-medium text-ink">Update</Text>
         </Pressable>
       </View>
 
