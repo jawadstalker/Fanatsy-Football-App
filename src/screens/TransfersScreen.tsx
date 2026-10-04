@@ -32,7 +32,6 @@ export function TransfersScreen() {
   const isInSquad = useTeamStore((s) => s.isInSquad);
   const squad = useTeamStore((s) => s.squad);
   const freeTransfers = useTeamStore((s) => s.freeTransfers);
-  const transfersMadeThisWeek = useTeamStore((s) => s.transfersMadeThisWeek);
   const chips = useTeamStore((s) => s.chips);
   const squadValue = useTeamStore((s) => s.squadValue());
   const bank = useTeamStore((s) => s.bank());
@@ -179,6 +178,21 @@ export function TransfersScreen() {
               </Pressable>
             ))}
           </ScrollView>
+          {outgoingPlayer ? (
+            <View className="mt-3 pt-3 border-t flex-row items-center justify-between" style={{ borderTopColor: colors.line }}>
+              <View>
+                <Text className="text-[10px] font-body text-muted">SELLING</Text>
+                <Text className="text-xs font-body-medium text-ink mt-0.5">{outgoingPlayer.name}</Text>
+              </View>
+              <View className="items-end">
+                <Text className="text-[10px] font-body text-muted">BUDGET AFTER SALE</Text>
+                <Text className="text-xs font-display-bold mt-0.5" style={{ color: colors.turf }}>€{(bank + outgoingPlayer.price).toFixed(1)}m</Text>
+              </View>
+              <Pressable onPress={() => setOutgoingId(null)} accessibilityRole="button" accessibilityLabel="Clear selected player" className="px-2 py-1">
+                <Text className="text-[11px] font-body-medium" style={{ color: colors.muted }}>Clear</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
       )}
 
