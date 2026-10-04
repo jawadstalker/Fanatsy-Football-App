@@ -218,8 +218,17 @@ leaguesRouter.post("/:code/teams/:teamId/transfers", requireAuth, async (req, re
   }
   if (outgoing.pos !== authoritative.pos) return res.status(400).json({ error: "Transfers must preserve the player's position" });
 
-  const currentGameweek = Number(process.env.CURRENT_GAMEWEEK ?? 6);
-  if (team.submittedGameweeks.includes(currentGameweek)) return res.status(409).json({ error: "Transfers are locked after gameweek submission" });
+  let gameweekState;
+  try {
+    gameweekState = await getAuthoritativeGameweekState();
+  } catch (err) {
+    return res.status(503).json({ error: "Cannot verify the gameweek deadline; transfers are disabled", detail: (err as Error).message });
+  }
+  if (gameweekState.locked) {
+    return res.status(409).json({ error: "Transfers are locked because the gameweek deadline has passed", deadline: gameweekState.deadline, currentGameweek: gameweekState.currentGameweek });
+  }
+  const currentGameweek = gameweekState.currentGameweek;
+  if (team.submittedGameweeks.includes(currentGameweek)) return res.status(409).json({ error: "Transfers are locked after points submission" });
   const chip = team.activeChips?.[0] ?? null;
   if (chip && chip !== "wildcard" && chip !== "freeHit") return res.status(409).json({ error: "Transfers are unavailable with the active chip" });
   const unlimited = chip === "wildcard" || chip === "freeHit";
