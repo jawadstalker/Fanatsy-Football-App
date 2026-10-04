@@ -55,7 +55,7 @@ async function fixtures(league:number,gameweek:number){
   return cached(`fixtures:${league}:${CURRENT_SEASON}:${gameweek}`, FIXTURE_CACHE_MS, async () => {
     const data=await apiGet<{response:Fixture[]}>("/fixtures",{league,season:CURRENT_SEASON});
     return data.response.filter((fixture) => {
-      const match=fixture.fixture.round?.match(/(\\d+)\\s*$/);
+      const match=fixture.fixture.round?.match(/(\d+)\s*$/);
       return match ? Number(match[1]) === gameweek : false;
     });
   });
