@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, FlatList, ScrollView, Pressable, ActivityIndicator } from "react-native";
-import { Search, Plus, Check, ArrowLeftRight } from "lucide-react-native";
+import { Search, Plus, Check, ArrowLeftRight, Wallet } from "lucide-react-native";
 import { TopBar } from "@/components/TopBar";
 import { AllLeaguesChip, LeagueChip } from "@/components/LeagueChip";
 import { PlayerDetailModal, DetailPlayer } from "@/components/PlayerDetailModal";
@@ -20,9 +20,11 @@ export function TransfersScreen() {
   const [selected, setSelected] = useState<DetailPlayer | null>(null);
   const [outgoingId, setOutgoingId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [position, setPosition] = useState<"ALL" | "GK" | "DEF" | "MID" | "FWD">("ALL");
 
   const live = usePlayers(active === "all" ? "epl" : active);
   const players: MarketPlayer[] = (active === "all" ? MARKET : live.players).filter((player) =>
+    (position === "ALL" || player.pos === position) &&
     `${player.name} ${player.club}`.toLowerCase().includes(search.trim().toLowerCase())
   );
 
@@ -30,6 +32,12 @@ export function TransfersScreen() {
   const isInSquad = useTeamStore((s) => s.isInSquad);
   const squad = useTeamStore((s) => s.squad);
   const freeTransfers = useTeamStore((s) => s.freeTransfers);
+  const transfersMadeThisWeek = useTeamStore((s) => s.transfersMadeThisWeek);
+  const chips = useTeamStore((s) => s.chips);
+  const squadValue = useTeamStore((s) => s.squadValue());
+  const bank = useTeamStore((s) => s.bank());
+  const unlimitedTransfers = chips.wildcard === "active" || chips.freeHit === "active";
+  const outgoingPlayer = squad.find((p) => p.id === outgoingId);
   const locked = useTeamStore((s) => s.isLocked());
   const leagueCode = useLeagueStore((s) => s.leagueCode);
   const teamId = useLeagueStore((s) => s.teamId);
@@ -37,6 +45,40 @@ export function TransfersScreen() {
   const [transferring, setTransferring] = useState(false);
 
   const handleAdd = async (player: MarketPlayer) => {
+    if (locked) {
+      setFeedback("Gameweek is locked — transfers reopen next gameweek");
+      return;
+    }
+    if (isInSquad(player.id)) {
+      setFeedback("This player is already in your squad");
+      return;
+    }
+    if (squad.length >= 15) {
+      if (outgoingId == null || !outgoingPlayer) {
+        setFeedback("Select a player to sell first");
+        return;
+      }
+      if (outgoingPlayer.pos !== player.pos) {
+        setFeedback("Choose a player in the same position");
+        return;
+      }
+      const clubCount = squad.filter((p) =>
+        p.id !== outgoingPlayer.id &&
+        (p.clubId ?? p.club) === (player.clubId ?? player.club)
+      ).length;
+      if (clubCount >= 3) {
+        setFeedback("You can select a maximum of 3 players from one club");
+        return;
+      }
+      const availableBudget = bank + outgoingPlayer.price;
+      if (player.price > availableBudget + 0.0001) {
+        setFeedback(`Not enough budget · €${availableBudget.toFixed(1)}m available`);
+        return;
+      }
+    } else if (player.price > bank + 0.0001) {
+      setFeedback(`Not enough budget · €${bank.toFixed(1)}m available`);
+      return;
+    }
     if (getBackendUrl() && squad.length >= 15) {
       if (!leagueCode || !teamId || !token || outgoingId == null) {
         setFeedback("Join a private league and select a player to sell first");
@@ -76,7 +118,29 @@ export function TransfersScreen() {
 
   return (
     <View className="flex-1">
-      <TopBar title="Transfer Market" sub={`${freeTransfers} free transfers remaining`} />
+      <TopBar title="Transfer Market" sub={`${freeTransfers} free transfer${freeTransfers === 1 ? "" : "s"} remaining`} />
+
+      <View className="mx-4 mb-3 rounded-lg border px-3 py-3" style={{ backgroundColor: colors.surface, borderColor: colors.line }}>
+        <View className="flex-row items-center justify-between">
+          <View>
+            <Text className="text-[10px] font-body text-muted">AVAILABLE BUDGET</Text>
+            <View className="flex-row items-center gap-1.5 mt-1">
+              <Wallet size={14} color={colors.muted} strokeWidth={1.7} />
+              <Text className="text-base font-display-bold text-ink">€{bank.toFixed(1)}m</Text>
+            </View>
+          </View>
+          <View className="items-end">
+            <Text className="text-[10px] font-body text-muted">SQUAD VALUE</Text>
+            <Text className="text-base font-display-bold text-ink mt-1">€{squadValue.toFixed(1)}m</Text>
+          </View>
+          <View className="items-end">
+            <Text className="text-[10px] font-body text-muted">NEXT TRANSFER</Text>
+            <Text className="text-base font-display-bold mt-1" style={{ color: unlimitedTransfers || freeTransfers > 0 ? colors.turf : colors.gold }}>
+              {unlimitedTransfers ? "Free" : freeTransfers > 0 ? "Free" : "-4 pts"}
+            </Text>
+          </View>
+        </View>
+      </View>
 
       {locked && (
         <View className="mx-4 mb-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.elevated }}>
@@ -144,6 +208,19 @@ export function TransfersScreen() {
             onPress={() => setActive(l.id)}
           />
         ))}
+      </ScrollView>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 18, paddingBottom: 10 }}>
+        {(["ALL", "GK", "DEF", "MID", "FWD"] as const).map((pos) => {
+          const isActive = position === pos;
+          return (
+            <Pressable key={pos} onPress={() => setPosition(pos)} className="pb-2 border-b-2" style={{ borderBottomColor: isActive ? colors.turf : "transparent" }}>
+              <Text className="text-xs font-body-medium" style={{ color: isActive ? colors.turf : colors.muted }}>
+                {pos === "ALL" ? "All positions" : pos}
+              </Text>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
       {active !== "all" && live.usingSampleData && (
@@ -236,9 +313,9 @@ function MarketRow({
           onPress={onAdd}
           disabled={inSquad || locked || (outgoingId !== null && !canReplace)}
           className="w-8 h-8 rounded-md items-center justify-center"
-          style={{ backgroundColor: inSquad || locked ? colors.line : colors.turf }}
+          style={{ backgroundColor: inSquad || locked || transferring || (outgoingId !== null && !canReplace) ? colors.line : colors.turf }}
         >
-          {inSquad ? <Check size={15} color={colors.muted} /> : transferring ? <ActivityIndicator size="small" color={colors.base} /> : <Plus size={15} color={locked ? colors.muted : colors.base} />}
+          {inSquad ? <Check size={15} color={colors.muted} /> : transferring ? <ActivityIndicator size="small" color={colors.base} /> : <Plus size={15} color={locked || (outgoingId !== null && !canReplace) ? colors.muted : colors.base} />}
         </Pressable>
       </View>
     </Pressable>
