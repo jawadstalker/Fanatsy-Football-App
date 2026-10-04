@@ -4,6 +4,7 @@ import { createLeague, getLeague, joinLeague, setTeamPoints, getStandings, updat
 import { calculateServerGameweekPoints, calculateSquadTotal } from "./scoring";
 import { requireAuth } from "./auth";
 import { getAuthoritativePlayer } from "./footballProxy";
+import { getAuthoritativeGameweekState } from "./gameweek";
 
 export const leaguesRouter = Router();
 
@@ -35,7 +36,7 @@ leaguesRouter.post("/:code/join", requireAuth, (req, res) => {
   res.status(201).json(joinLeague(nanoid(10), code, normalized, req.userId!));
 });
 
-leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
+leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, async (req, res) => {
   const { squadPlayerIds, startingPlayerIds, squadPlayers, captainId, viceCaptainId, activeChips } = req.body as {
     squadPlayerIds?: unknown;
     captainId?: unknown;
@@ -121,7 +122,16 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, (req, res) => {
     return res.status(403).json({ error: "You do not own this team" });
   }
 
-  const currentGameweek = Number(process.env.CURRENT_GAMEWEEK ?? 6);
+  let gameweekState;
+  try {
+    gameweekState = await getAuthoritativeGameweekState();
+  } catch (err) {
+    return res.status(503).json({ error: "Cannot verify the gameweek deadline; squad changes are disabled", detail: (err as Error).message });
+  }
+  if (gameweekState.locked) {
+    return res.status(409).json({ error: "Squad and chip changes are locked because the gameweek deadline has passed", deadline: gameweekState.deadline, currentGameweek: gameweekState.currentGameweek });
+  }
+  const currentGameweek = gameweekState.currentGameweek;
   const previousIds = currentTeam.squadPlayerIds ?? [];
   const incomingIds = (squadPlayerIds as number[]).filter((id) => !previousIds.includes(id));
   const outgoingIds = previousIds.filter((id) => !(squadPlayerIds as number[]).includes(id));
