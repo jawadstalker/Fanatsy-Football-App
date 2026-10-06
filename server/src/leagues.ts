@@ -109,6 +109,12 @@ leaguesRouter.put("/:code/teams/:teamId/squad", requireAuth, async (req, res) =>
   if (captainId !== null && viceCaptainId !== null && captainId === viceCaptainId) {
     return res.status(400).json({ error: "captainId and viceCaptainId must be different" });
   }
+  if (captainId !== null && !uniqueStartingIds.has(captainId as number)) {
+    return res.status(400).json({ error: "Captain must be one of the 11 starting players" });
+  }
+  if (viceCaptainId !== null && !uniqueStartingIds.has(viceCaptainId as number)) {
+    return res.status(400).json({ error: "Vice-captain must be one of the 11 starting players" });
+  }
 
   const allowedChips = new Set(["wildcard", "benchBoost", "tripleCaptain", "freeHit"]);
   if (!Array.isArray(activeChips) || activeChips.length > 1 || !activeChips.every((chip) => typeof chip === "string" && allowedChips.has(chip))) {
