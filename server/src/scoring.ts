@@ -32,7 +32,7 @@ type Fixture = {
   goals: { home: number | null; away: number | null };
 };
 const POSITIONS: Record<string, Position> = { Goalkeeper:"GK", Defender:"DEF", Midfielder:"MID", Attacker:"FWD" };
-const GOALS: Record<Position, number> = { GK:6, DEF:6, MID:5, FWD:4 };
+const GOALS: Record<Position, number> = { GK:10, DEF:6, MID:5, FWD:4 };
 const CLEAN: Record<Position, number> = { GK:4, DEF:4, MID:1, FWD:0 };
 
 async function apiGet<T>(path:string, query:Record<string,string|number>):Promise<T> {
