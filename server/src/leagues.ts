@@ -256,6 +256,21 @@ leaguesRouter.post("/:code/teams/:teamId/calculate-points", requireAuth, async (
   const team=getStandings(code).find(t=>t.id===req.params.teamId);
   if(!team||team.userId!==req.userId)return res.status(403).json({error:"You do not own this team"});
   if(!team.squadPlayerIds||team.squadPlayerIds.length!==15)return res.status(400).json({error:"Save a complete 15-player squad before calculating points"});
+  let gameweekState;
+  try {
+    gameweekState = await getAuthoritativeGameweekState();
+  } catch (err) {
+    return res.status(503).json({ error: "Cannot verify the authoritative gameweek; scoring is disabled", detail: (err as Error).message });
+  }
+  if (gameweek !== gameweekState.currentGameweek) {
+    return res.status(409).json({ error: "Scoring is only available for the authoritative current gameweek", requestedGameweek: gameweek, currentGameweek: gameweekState.currentGameweek });
+  }
+  if (new Date(gameweekState.kickoff).getTime() > Date.now()) {
+    return res.status(409).json({ error: "This gameweek has not started yet", kickoff: gameweekState.kickoff });
+  }
+  if (team.submittedGameweeks.includes(gameweek)) {
+    return res.status(409).json({ error: "Points already submitted for this gameweek", team });
+  }
   try{
     const points=await calculateServerGameweekPoints(team.squadPlayerIds,gameweek);
     const total=calculateSquadTotal(
