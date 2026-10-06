@@ -195,7 +195,7 @@ export function setTeamPoints(teamId: string, gameweek: number, gwPoints: number
   team.activeChips = [];
   team.transfersThisWeek = 0;
   team.pointsHit = 0;
-  team.freeTransfers = Math.min(2, (team.freeTransfers ?? 1) + 1);
+  team.freeTransfers = Math.min(5, (team.freeTransfers ?? 1) + 1);
 
   db.teams[teamId] = team;
   writeDb(db);
