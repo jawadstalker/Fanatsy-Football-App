@@ -18,7 +18,7 @@ async function cached<T>(key: string, ttl: number, loader: () => Promise<T>): Pr
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
 type PlayerStats = {
-  player: { id: number };
+  player: { id: number; name?: string };
   statistics: Array<{
     games: { minutes?: number | null; position?: string | null };
     goals: { total?: number | null; assists?: number | null; saves?: number | null };
@@ -34,6 +34,60 @@ type Fixture = {
 const POSITIONS: Record<string, Position> = { Goalkeeper:"GK", Defender:"DEF", Midfielder:"MID", Attacker:"FWD" };
 const GOALS: Record<Position, number> = { GK:10, DEF:6, MID:5, FWD:4 };
 const CLEAN: Record<Position, number> = { GK:4, DEF:4, MID:1, FWD:0 };
+
+type FplLiveElement = {
+  id: number;
+  stats?: {
+    minutes?: number;
+    total_points?: number;
+    bps?: number;
+    bonus?: number;
+    defensive_contribution?: number;
+  };
+};
+
+type FplLiveResponse = { elements: FplLiveElement[] };
+
+function normalizePlayerName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+async function fplLive(gameweek: number): Promise<Map<string, FplLiveElement["stats"]>> {
+  return cached(`fpl-live:${gameweek}`, 5 * 60 * 1000, async () => {
+    const response = await fetch(`https://fantasy.premierleague.com/api/event/${gameweek}/live/`);
+    if (!response.ok) throw new Error(`FPL live endpoint failed (${response.status})`);
+    const body = await response.json() as FplLiveResponse;
+    return new Map(
+      body.elements.map((element) => [
+        String(element.id),
+        element.stats ?? {},
+      ]),
+    );
+  });
+}
+
+async function fplBootstrapNames(): Promise<Map<string, number>> {
+  return cached("fpl-bootstrap-names", 60 * 60 * 1000, async () => {
+    const response = await fetch("https://fantasy.premierleague.com/api/bootstrap-static/");
+    if (!response.ok) throw new Error(`FPL bootstrap endpoint failed (${response.status})`);
+    const body = await response.json() as {
+      elements: Array<{ id: number; first_name?: string; second_name?: string; web_name?: string }>;
+    };
+    const map = new Map<string, number>();
+    for (const player of body.elements) {
+      const names = [
+        `${player.first_name ?? ""} ${player.second_name ?? ""}`,
+        player.web_name ?? "",
+      ].filter(Boolean);
+      for (const name of names) map.set(normalizePlayerName(name), player.id);
+    }
+    return map;
+  });
+}
 
 async function apiGet<T>(path:string, query:Record<string,string|number>):Promise<T> {
   const key=process.env.RAPIDAPI_KEY;
@@ -62,6 +116,8 @@ async function fixtures(league:number,gameweek:number){
 }
 export async function calculateServerGameweekPoints(ids:number[],gameweek:number){
   const totals=new Map<number,number>();
+  const fplStats = await fplLive(gameweek);
+  const fplNames = await fplBootstrapNames();
   for(const league of Object.values(LEAGUE_API_IDS)){
     const fs=await fixtures(league,gameweek);
     await Promise.all(fs.map(async f=>{
@@ -77,7 +133,18 @@ export async function calculateServerGameweekPoints(ids:number[],gameweek:number
         // captain/vice-captain fallback distinguish a no-show from 0 points.
         if ((s.games.minutes ?? 0) <= 0) continue;
         const pos=POSITIONS[s.games.position??""]; if(!pos)continue;
-        totals.set(p.player.id,(totals.get(p.player.id)??0)+score(s,pos,conceded[block.team.id]??0));
+        // EPL uses the official FPL live feed for total points, including
+        // 2026/27 Defensive Contribution and BPS/bonus. Other supported
+        // leagues keep the API-Football scoring fallback below.
+        const playerName = p.player.name ? normalizePlayerName(p.player.name) : "";
+        const fplId = playerName ? fplNames.get(playerName) : undefined;
+        const official = fplId != null ? fplStats.get(String(fplId)) : undefined;
+        const isEpl = league === LEAGUE_API_IDS.epl;
+        if (isEpl && official && typeof official.total_points === "number") {
+          totals.set(p.player.id, (totals.get(p.player.id) ?? 0) + official.total_points);
+        } else {
+          totals.set(p.player.id,(totals.get(p.player.id)??0)+score(s,pos,conceded[block.team.id]??0));
+        }
       }
     }));
   }
