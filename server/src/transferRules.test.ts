@@ -68,8 +68,8 @@ test("chip rules allow exactly one active chip at a time", () => {
   assert.equal(["wildcard", "freeHit"].length > 1, true);
 });
 
-test("free transfer bank never exceeds two", () => {
-  assert.equal(Math.min(2, 0 + 1), 1);
-  assert.equal(Math.min(2, 1 + 1), 2);
-  assert.equal(Math.min(2, 2 + 1), 2);
+test("free transfer bank never exceeds five", () => {
+  assert.equal(Math.min(5, 0 + 1), 1);
+  assert.equal(Math.min(5, 4 + 1), 5);
+  assert.equal(Math.min(5, 5 + 1), 5);
 });
