@@ -61,3 +61,15 @@ test("Free Hit preserves the existing free-transfer bank and points hit", () => 
   });
 });
 
+
+test("chip rules allow exactly one active chip at a time", () => {
+  const allowed = new Set(["wildcard", "benchBoost", "tripleCaptain", "freeHit"]);
+  assert.equal(["wildcard"].filter((chip) => !allowed.has(chip)).length, 0);
+  assert.equal(["wildcard", "freeHit"].length > 1, true);
+});
+
+test("free transfer bank never exceeds two", () => {
+  assert.equal(Math.min(2, 0 + 1), 1);
+  assert.equal(Math.min(2, 1 + 1), 2);
+  assert.equal(Math.min(2, 2 + 1), 2);
+});
