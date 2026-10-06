@@ -44,7 +44,7 @@ async function apiGet<T>(path:string, query:Record<string,string|number>):Promis
   if(!r.ok) throw new Error(`API-Football request failed (${r.status})`);
   return body;
 }
-function score(s:PlayerStats["statistics"][number],pos:Position,conceded:number){
+export function score(s:PlayerStats["statistics"][number],pos:Position,conceded:number){
   const min=s.games.minutes??0;if(min<=0)return 0;
   return (min>=60?2:1)+(s.goals.total??0)*GOALS[pos]+(s.goals.assists??0)*3+
     (conceded===0&&min>=60?CLEAN[pos]:0)+(pos==="GK"?Math.floor((s.goals.saves??0)/3):0)+
