@@ -36,3 +36,28 @@ test("Wildcard and Free Hit transfers do not change charges", () => {
 test("negative transfer count is rejected", () => {
   assert.throws(() => calculateTransferAccounting(-1, 1, 0, 0, false));
 });
+
+test("two banked free transfers are both consumed before a hit", () => {
+  assert.deepEqual(calculateTransferAccounting(2, 2, 0, 0, false), {
+    transfersThisWeek: 2, freeTransfers: 0, pointsHit: 0,
+  });
+});
+
+test("a third transfer after two free transfers costs four points", () => {
+  assert.deepEqual(calculateTransferAccounting(3, 2, 0, 0, false), {
+    transfersThisWeek: 3, freeTransfers: 0, pointsHit: 4,
+  });
+});
+
+test("Wildcard preserves the existing free-transfer bank and points hit", () => {
+  assert.deepEqual(calculateTransferAccounting(5, 2, 4, 0, true), {
+    transfersThisWeek: 5, freeTransfers: 2, pointsHit: 4,
+  });
+});
+
+test("Free Hit preserves the existing free-transfer bank and points hit", () => {
+  assert.deepEqual(calculateTransferAccounting(4, 1, 8, 2, true), {
+    transfersThisWeek: 6, freeTransfers: 1, pointsHit: 8,
+  });
+});
+
