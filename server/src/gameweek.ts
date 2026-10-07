@@ -77,9 +77,29 @@ export async function getGameweekState(gameweek?: number, now = new Date()): Pro
   const latestPast = [...rounds]
     .filter((entry) => entry.last < nowMs)
     .sort((a, b) => b.last - a.last)[0];
+
+  const finalizationAtFor = (entry: { last: number }) => {
+    const londonParts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date(entry.last));
+    const year = Number(londonParts.find((part) => part.type === "year")?.value);
+    const month = Number(londonParts.find((part) => part.type === "month")?.value);
+    const day = Number(londonParts.find((part) => part.type === "day")?.value);
+    return Date.UTC(year, month - 1, day + 1, 9, 0, 0);
+  };
+
+  // Between the final whistle and 09:00 UK the next morning, keep the
+  // just-finished gameweek authoritative so its points can be finalized.
+  const latestPastStillFinalizing = latestPast && nowMs < finalizationAtFor(latestPast)
+    ? latestPast
+    : undefined;
+
   const selected = gameweek != null
     ? rounds.find((entry) => entry.round === gameweek)
-    : active ?? upcoming ?? latestPast;
+    : active ?? latestPastStillFinalizing ?? upcoming ?? latestPast;
   if (!selected) throw new Error("Could not determine requested gameweek; refusing to guess");
 
   const rawOffset = Number(process.env.GAMEWEEK_DEADLINE_OFFSET_MINUTES ?? 90);
@@ -89,18 +109,7 @@ export async function getGameweekState(gameweek?: number, now = new Date()): Pro
   const deadlineMs = selected.first - offsetMinutes * 60_000;
   // FPL final points are confirmed at 09:00 UK time on the day after the
   // gameweek's final match. Intl handles GMT/BST correctly for the date.
-  const lastDate = new Date(selected.last);
-  const londonDate = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/London",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(lastDate);
-  const year = Number(londonDate.find((part) => part.type === "year")?.value);
-  const month = Number(londonDate.find((part) => part.type === "month")?.value);
-  const day = Number(londonDate.find((part) => part.type === "day")?.value);
-  const nextDay = new Date(Date.UTC(year, month - 1, day + 1, 9, 0, 0));
-  const finalizationAt = nextDay.toISOString();
+  const finalizationAt = new Date(finalizationAtFor(selected)).toISOString();
 
   return {
     currentGameweek: selected.round,
