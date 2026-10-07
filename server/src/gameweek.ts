@@ -1,3 +1,5 @@
+import { getOfficialFplDeadline } from "./fpl";
+
 const API_HOST = "api-football-v1.p.rapidapi.com";
 const API_BASE_URL = `https://${API_HOST}/v3`;
 const PREMIER_LEAGUE_ID = 39;
@@ -13,9 +15,8 @@ export interface GameweekState {
 }
 
 /**
- * API-Football provides fixture kick-off times, not the official FPL deadline.
- * By default we conservatively lock 90 minutes before the earliest kick-off.
- * Override GAMEWEEK_DEADLINE_OFFSET_MINUTES if your game's rules differ.
+ * API-Football remains the source for fixture timing/gameweek boundaries.
+ * The fantasy deadline itself is always read from the official FPL API.
  */
 export async function getAuthoritativeGameweekState(now = new Date()): Promise<GameweekState> {
   return getGameweekState(undefined, now);
@@ -91,8 +92,6 @@ export async function getGameweekState(gameweek?: number, now = new Date()): Pro
     return Date.UTC(year, month - 1, day + 1, 9, 0, 0);
   };
 
-  // Between the final whistle and 09:00 UK the next morning, keep the
-  // just-finished gameweek authoritative so its points can be finalized.
   const latestPastStillFinalizing = latestPast && nowMs < finalizationAtFor(latestPast)
     ? latestPast
     : undefined;
@@ -102,13 +101,7 @@ export async function getGameweekState(gameweek?: number, now = new Date()): Pro
     : active ?? latestPastStillFinalizing ?? upcoming ?? latestPast;
   if (!selected) throw new Error("Could not determine requested gameweek; refusing to guess");
 
-  const rawOffset = Number(process.env.GAMEWEEK_DEADLINE_OFFSET_MINUTES ?? 90);
-  const offsetMinutes = Number.isFinite(rawOffset) && rawOffset >= 0 && rawOffset <= 1440
-    ? rawOffset
-    : 90;
-  const deadlineMs = selected.first - offsetMinutes * 60_000;
-  // FPL final points are confirmed at 09:00 UK time on the day after the
-  // gameweek's final match. Intl handles GMT/BST correctly for the date.
+  const deadline = await getOfficialFplDeadline(selected.round);
   const finalizationAt = new Date(finalizationAtFor(selected)).toISOString();
 
   return {
@@ -116,7 +109,7 @@ export async function getGameweekState(gameweek?: number, now = new Date()): Pro
     kickoff: new Date(selected.first).toISOString(),
     lastKickoff: new Date(selected.last).toISOString(),
     finalizationAt,
-    deadline: new Date(deadlineMs).toISOString(),
-    locked: nowMs >= deadlineMs,
+    deadline,
+    locked: nowMs >= new Date(deadline).getTime(),
   };
 }
