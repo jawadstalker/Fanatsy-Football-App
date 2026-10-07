@@ -4,7 +4,7 @@ import { createLeague, getLeague, joinLeague, setTeamPoints, getStandings, updat
 import { calculateServerGameweekPoints, calculateSquadTotal } from "./scoring";
 import { requireAuth } from "./auth";
 import { getAuthoritativePlayer } from "./footballProxy";
-import { getAuthoritativeGameweekState } from "./gameweek";
+import { getAuthoritativeGameweekState, getGameweekState } from "./gameweek";
 
 export const leaguesRouter = Router();
 
@@ -262,17 +262,27 @@ leaguesRouter.post("/:code/teams/:teamId/calculate-points", requireAuth, async (
   const team=getStandings(code).find(t=>t.id===req.params.teamId);
   if(!team||team.userId!==req.userId)return res.status(403).json({error:"You do not own this team"});
   if(!team.squadPlayerIds||team.squadPlayerIds.length!==15)return res.status(400).json({error:"Save a complete 15-player squad before calculating points"});
-  let gameweekState;
+  let currentState;
+  let requestedState;
   try {
-    gameweekState = await getAuthoritativeGameweekState();
+    currentState = await getAuthoritativeGameweekState();
+    requestedState = await getGameweekState(gameweek);
   } catch (err) {
     return res.status(503).json({ error: "Cannot verify the authoritative gameweek; scoring is disabled", detail: (err as Error).message });
   }
-  if (gameweek !== gameweekState.currentGameweek) {
-    return res.status(409).json({ error: "Scoring is only available for the authoritative current gameweek", requestedGameweek: gameweek, currentGameweek: gameweekState.currentGameweek });
+  if (gameweek !== currentState.currentGameweek) {
+    return res.status(409).json({ error: "Scoring is only available for the authoritative current gameweek", requestedGameweek: gameweek, currentGameweek: currentState.currentGameweek });
   }
-  if (new Date(gameweekState.kickoff).getTime() > Date.now()) {
-    return res.status(409).json({ error: "This gameweek has not started yet", kickoff: gameweekState.kickoff });
+  const nowMs = Date.now();
+  if (new Date(requestedState.kickoff).getTime() > nowMs) {
+    return res.status(409).json({ error: "This gameweek has not started yet", kickoff: requestedState.kickoff });
+  }
+  if (new Date(requestedState.finalizationAt).getTime() > nowMs) {
+    return res.status(409).json({
+      error: "Gameweek points are not final yet",
+      lastKickoff: requestedState.lastKickoff,
+      finalizationAt: requestedState.finalizationAt,
+    });
   }
   if (team.submittedGameweeks.includes(gameweek)) {
     return res.status(409).json({ error: "Points already submitted for this gameweek", team });
