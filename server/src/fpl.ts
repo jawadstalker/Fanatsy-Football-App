@@ -27,10 +27,13 @@ export async function getOfficialFplGameweeks(): Promise<FplGameweekEvent[]> {
     Number.isInteger(event.id) &&
     event.id > 0 &&
     typeof event.deadline_time === "string" &&
-    Number.isFinite(new Date(event.deadline_time).getTime())
+    Number.isFinite(new Date(event.deadline_time).getTime()) &&
+    typeof event.finished === "boolean" &&
+    typeof event.is_current === "boolean" &&
+    typeof event.is_next === "boolean"
   );
 
-  if (!events.length) throw new Error("Official FPL returned no valid gameweek deadlines");
+  if (!events.length) throw new Error("Official FPL returned no valid gameweek events");
 
   cache = { expiresAt: Date.now() + 60_000, events };
   return events;
