@@ -40,12 +40,19 @@ export function SquadScreen() {
 
   const { sync, syncing, error } = useGameweekSync();
   const [dismissedError, setDismissedError] = useState(false);
+  const [lastSuccessfulSync, setLastSuccessfulSync] = useState<Date | null>(null);
   const [selected, setSelected] = useState<SquadPlayer | null>(null);
   const [subMessage, setSubMessage] = useState<string | null>(null);
   const pitchRef = useRef<View>(null);
 
   const starting = squad.filter((p) => p.isStarting);
   const bench = squad.filter((p) => !p.isStarting);
+
+  const handleSync = async () => {
+    setDismissedError(false);
+    const succeeded = await sync();
+    if (succeeded) setLastSuccessfulSync(new Date());
+  };
 
   const handleSwapAttempt = (benchId: number, startingId: number) => {
     const result = swapPlayers(benchId, startingId);
@@ -82,10 +89,7 @@ export function SquadScreen() {
           </Text>
         </View>
         <Pressable
-          onPress={() => {
-            setDismissedError(false);
-            sync();
-          }}
+          onPress={handleSync}
           className="flex-row items-center gap-1.5 py-1 border-l pl-3"
           style={{ borderLeftColor: colors.line }}
         >
@@ -96,6 +100,14 @@ export function SquadScreen() {
           )}
           <Text className="text-xs font-body-medium text-ink">Update</Text>
         </Pressable>
+      </View>
+
+      <View className="px-4 mb-2">
+        <Text className="text-[10px] font-body text-muted">
+          {lastSuccessfulSync
+            ? "Fixture points updated at " + lastSuccessfulSync.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + " · not official live FPL points"
+            : "Fixture-based points · not official live FPL points"}
+        </Text>
       </View>
 
       {error && !dismissedError && (
