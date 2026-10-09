@@ -5,7 +5,7 @@ import { footballRouter } from "./footballProxy";
 import { leaguesRouter } from "./leagues";
 import authRouter from "./auth";
 
-const app = express();
+export const app = express();
 
 const allowedOrigins = (process.env.CORS_ORIGINS ?? "*")
   .split(",")
@@ -24,6 +24,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/leagues", leaguesRouter);
 
 const port = Number(process.env.PORT ?? 4000);
-app.listen(port, () => {
-  console.log(`Fantasy Multi League server listening on port ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Fantasy Multi League server listening on port ${port}`);
+  });
+}
