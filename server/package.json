@@ -7,7 +7,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "test": "npm run build && node --test dist/transferRules.test.js dist/scoring.test.js dist/gameweek.test.js"
+    "test": "npm run build && node --test dist/transferRules.test.js dist/scoring.test.js dist/gameweek.test.js dist/api.integration.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
