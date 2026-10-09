@@ -9,7 +9,7 @@ export function useGameweekSync() {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sync = async () => {
+  const sync = async (): Promise<boolean> => {
     setSyncing(true);
     setError(null);
 
@@ -22,8 +22,8 @@ export function useGameweekSync() {
       );
 
       if (clubIds.length === 0) {
-        setError("No live players (from API) in your squad to sync points for");
-        return;
+        setError("No API-backed players in your squad to sync fixture points for");
+        return false;
       }
 
       const fixtureIds = await Promise.all(clubIds.map(fetchLastFixtureIdForTeam));
@@ -35,8 +35,14 @@ export function useGameweekSync() {
       const allResults: PlayerFixturePoints[] = perFixture.flat();
 
       applyFixturePoints(allResults);
+      if (allResults.length === 0) {
+        setError("No player statistics were returned for the latest fixtures");
+        return false;
+      }
+      return true;
     } catch (err) {
       setError((err as Error).message);
+      return false;
     } finally {
       setSyncing(false);
     }
