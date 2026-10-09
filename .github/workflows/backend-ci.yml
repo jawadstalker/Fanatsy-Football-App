@@ -34,14 +34,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: server/package.json
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Build TypeScript
-        run: npm run build
-
-      - name: Run unit and integration tests
+      - name: Build and run unit/integration tests
         run: npm test
