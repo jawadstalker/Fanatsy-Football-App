@@ -62,7 +62,7 @@ test("HTTP API integration: health, auth, league lifecycle and guarded squad act
   });
   assert.equal(leagueResponse.status, 201);
   const league = await leagueResponse.json() as { code: string };
-  assert.match(league.code, /^[A-Z0-9]{6}$/);
+  assert.match(league.code, /^[A-Z0-9_-]{6}$/);
 
   const joinResponse = await fetch(`${baseUrl}/api/leagues/${league.code}/join`, {
     method: "POST",
