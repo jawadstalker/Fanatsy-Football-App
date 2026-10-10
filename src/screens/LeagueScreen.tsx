@@ -115,6 +115,8 @@ function RealLeagueView() {
   const authLoading = useAuthStore((s) => s.loading);
   const logout = useAuthStore((s) => s.logout);
   const leaveLeague = useLeagueStore((s) => s.leaveLeague);
+  const myRankIndex = league.standings.findIndex((team) => team.id === league.teamId);
+  const myRank = myRankIndex >= 0 ? myRankIndex + 1 : null;
 
   if (!token) {
     return <AuthLeagueView />;
@@ -188,6 +190,26 @@ function RealLeagueView() {
           {submitted ? "Points submitted" : `Submit this week's points (${gameweekTotal})`}
         </Text>
       </Pressable>
+
+      {myRank !== null && (
+        <View className="mx-4 mb-3 rounded-xl border px-4 py-3" style={{ backgroundColor: colors.surface, borderColor: colors.line }}>
+          <View className="flex-row items-center justify-between">
+            <View>
+              <Text className="text-[10px] font-body text-muted">YOUR LEAGUE POSITION</Text>
+              <Text className="text-2xl font-display-bold text-ink">#{myRank}<Text className="text-xs font-body text-muted"> / {league.standings.length}</Text></Text>
+            </View>
+            <View className="items-end">
+              <Text className="text-[10px] font-body text-muted">TOTAL POINTS</Text>
+              <Text className="text-xl font-display-bold" style={{ color: colors.gold }}>
+                {league.standings[myRankIndex]?.totalPoints ?? 0}
+              </Text>
+            </View>
+          </View>
+          <Text className="text-[10px] font-body text-muted mt-2">
+            Based on submitted points · refresh standings to update
+          </Text>
+        </View>
+      )}
 
       {league.error && (
         <View className="mx-4 mb-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.elevated }}>
