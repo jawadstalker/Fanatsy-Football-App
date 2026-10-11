@@ -62,7 +62,7 @@ const visible = player !== null;
   }, [visible]);
 
   const normalizeName = (value: string) =>
-    value.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
   const officialMatch = player && officialPlayers
     ? (() => {
         const matches = officialPlayers.filter((item) =>
