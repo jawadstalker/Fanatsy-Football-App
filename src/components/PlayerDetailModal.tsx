@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, View, Text, Pressable, ScrollView } from "react-native";
 import { X } from "lucide-react-native";
 import { colors, leagueColor, LEAGUES } from "@/theme/tokens";
 import { getPlayerStats } from "@/data/playerStats";
+import { getOfficialFplLiveStats, OfficialFplLivePlayer } from "@/api/backendClient";
 import { LeagueId, Position } from "@/types";
 
 // Minimal shape needed for the detail view — satisfied by both SquadPlayer
@@ -33,8 +34,45 @@ export function PlayerDetailModal({
   player: DetailPlayer | null;
   onClose: () => void;
 }) {
-  const visible = player !== null;
+const visible = player !== null;
   const stats = player ? getPlayerStats(player.id) : null;
+  const [officialPlayers, setOfficialPlayers] = useState<OfficialFplLivePlayer[] | null>(null);
+  const [officialGameweek, setOfficialGameweek] = useState<number | null>(null);
+  const [officialLoading, setOfficialLoading] = useState(false);
+  const [officialError, setOfficialError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!visible) return;
+    let cancelled = false;
+    setOfficialLoading(true);
+    setOfficialError(null);
+    getOfficialFplLiveStats()
+      .then((result) => {
+        if (cancelled) return;
+        setOfficialPlayers(result.players);
+        setOfficialGameweek(result.gameweek);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setOfficialError(error instanceof Error ? error.message : "Official stats unavailable");
+      })
+      .finally(() => {
+        if (!cancelled) setOfficialLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [visible]);
+
+  const normalizeName = (value: string) =>
+    value.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const officialMatch = player && officialPlayers
+    ? (() => {
+        const matches = officialPlayers.filter((item) =>
+          normalizeName(item.teamName) === normalizeName(player.club) &&
+          (normalizeName(item.name) === normalizeName(player.name) ||
+            normalizeName(item.webName) === normalizeName(player.name))
+        );
+        return matches.length === 1 ? matches[0] : null;
+      })()
+    : null;
   const leagueLabel = player ? LEAGUES.find((l) => l.id === player.league)?.label : "";
   const maxLast5 = stats ? Math.max(...stats.last5, 1) : 1;
 
@@ -77,6 +115,36 @@ export function PlayerDetailModal({
                 <Pill label="Price" value={`€${player.price.toFixed(1)}m`} />
                 <Pill label="Season Points" value={String(stats?.seasonPoints ?? player.pts ?? 0)} highlight />
                 <Pill label="Form" value={stats ? (stats.last5.at(-1) ?? 0).toString() : "-"} />
+              </View>
+
+              <Text className="text-xs font-body-medium text-muted mb-2">
+                OFFICIAL FPL BONUS / BPS{officialGameweek ? " · GW" + officialGameweek : ""}
+              </Text>
+              <View className="rounded-xl border mb-5 px-3 py-3" style={{ borderColor: colors.line, backgroundColor: colors.surface }}>
+                {officialLoading ? (
+                  <Text className="text-xs font-body text-muted">Loading official FPL stats…</Text>
+                ) : officialError ? (
+                  <Text className="text-xs font-body text-muted">Official FPL stats unavailable. Try again later.</Text>
+                ) : officialMatch ? (
+                  <View className="flex-row justify-between">
+                    <View>
+                      <Text className="text-lg font-display-bold text-ink">{officialMatch.bps ?? "—"}</Text>
+                      <Text className="text-[10px] font-body text-muted">BPS</Text>
+                    </View>
+                    <View className="items-center">
+                      <Text className="text-lg font-display-bold" style={{ color: colors.gold }}>{officialMatch.bonus ?? "—"}</Text>
+                      <Text className="text-[10px] font-body text-muted">Bonus</Text>
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-lg font-display-bold text-ink">{officialMatch.totalPoints ?? "—"}</Text>
+                      <Text className="text-[10px] font-body text-muted">FPL points</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <Text className="text-xs font-body text-muted">
+                    No unique official FPL match for this player. Values are hidden rather than guessed.
+                  </Text>
+                )}
               </View>
 
               {stats && (
