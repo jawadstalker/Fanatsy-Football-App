@@ -10,6 +10,7 @@ const API_BASE_URL = `https://${API_HOST}/v3`;
 const ALLOWED_PATHS = new Set(["/players", "/fixtures", "/fixtures/players"]);
 
 import { getAuthoritativeGameweekState } from "./gameweek";
+import { getOfficialFplLivePlayers } from "./fpl";
 
 const CURRENT_SEASON = 2026;
 
@@ -152,5 +153,15 @@ footballRouter.get("/*", async (req, res) => {
     res.status(upstream.status).json(body);
   } catch (err) {
     res.status(502).json({ error: "Upstream request failed", detail: (err as Error).message });
+  }
+});
+
+
+footballRouter.get("/fpl/live-stats", async (_req, res) => {
+  try {
+    const result = await getOfficialFplLivePlayers();
+    return res.json(result);
+  } catch (err) {
+    return res.status(502).json({ error: "Official FPL live stats unavailable", detail: (err as Error).message });
   }
 });
