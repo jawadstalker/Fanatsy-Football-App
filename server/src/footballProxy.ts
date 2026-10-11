@@ -131,6 +131,16 @@ footballRouter.get("/players/:id", async (req, res) => {
   }
 });
 
+
+footballRouter.get("/fpl/live-stats", async (_req, res) => {
+  try {
+    const result = await getOfficialFplLivePlayers();
+    return res.json(result);
+  } catch (err) {
+    return res.status(502).json({ error: "Official FPL live stats unavailable", detail: (err as Error).message });
+  }
+});
+
 footballRouter.get("/*", async (req, res) => {
   const apiPath = req.path; // e.g. "/players"
   if (!ALLOWED_PATHS.has(apiPath)) {
@@ -156,12 +166,3 @@ footballRouter.get("/*", async (req, res) => {
   }
 });
 
-
-footballRouter.get("/fpl/live-stats", async (_req, res) => {
-  try {
-    const result = await getOfficialFplLivePlayers();
-    return res.json(result);
-  } catch (err) {
-    return res.status(502).json({ error: "Official FPL live stats unavailable", detail: (err as Error).message });
-  }
-});
