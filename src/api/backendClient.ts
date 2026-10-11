@@ -57,3 +57,22 @@ export function submitTransfer(
 
 export function calculateAndSubmitPoints(code:string,teamId:string,gameweek:number,token:string):Promise<BackendTeam>{return request(`/api/leagues/${encodeURIComponent(code)}/teams/${encodeURIComponent(teamId)}/calculate-points`,{method:"POST",body:JSON.stringify({gameweek})},token)}
 export function getStandings(code:string, token:string):Promise<BackendTeam[]>{return request(`/api/leagues/${encodeURIComponent(code)}/standings`,{},token)}
+
+
+export interface OfficialFplLivePlayer {
+  id: number;
+  name: string;
+  webName: string;
+  teamName: string;
+  bps: number | null;
+  bonus: number | null;
+  totalPoints: number | null;
+  minutes: number | null;
+}
+export interface OfficialFplLiveStats {
+  gameweek: number;
+  players: OfficialFplLivePlayer[];
+}
+export function getOfficialFplLiveStats(): Promise<OfficialFplLiveStats> {
+  return request("/api/football/fpl/live-stats");
+}
