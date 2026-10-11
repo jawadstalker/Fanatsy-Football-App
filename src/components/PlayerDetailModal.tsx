@@ -4,6 +4,7 @@ import { X } from "lucide-react-native";
 import { colors, leagueColor, LEAGUES } from "@/theme/tokens";
 import { getPlayerStats } from "@/data/playerStats";
 import { getOfficialFplLiveStats, OfficialFplLivePlayer } from "@/api/backendClient";
+import { PlayerKit3D } from "@/components/PlayerKit3D";
 import { LeagueId, Position } from "@/types";
 
 // Minimal shape needed for the detail view — satisfied by both SquadPlayer
@@ -96,6 +97,7 @@ const visible = player !== null;
 
           {player && (
             <ScrollView showsVerticalScrollIndicator={false}>
+              <PlayerKit3D club={player.club} league={player.league} />
               {/* header */}
               <View className="items-center mb-4">
                 <View
