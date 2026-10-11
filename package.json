@@ -28,7 +28,11 @@
     "@expo-google-fonts/vazirmatn": "^0.2.3",
     "nativewind": "^4.1.10",
     "tailwindcss": "^3.4.0",
-    "zustand": "^5.0.1"
+    "zustand": "^5.0.1",
+    "three": "^0.170.0",
+    "@react-three/fiber": "^8.17.10",
+    "expo-gl": "~15.0.2",
+    "expo-asset": "~11.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
