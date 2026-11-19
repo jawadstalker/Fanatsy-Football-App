@@ -8,16 +8,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        base: "#0D1512",
-        surface: "#141F19",
-        elevated: "#1B2A21",
-        line: "#28372C",
-        turf: "#79B34C",
-        turfdim: "#3E5A34",
-        gold: "#E3B34B",
-        ink: "#F3F4EE",
-        muted: "#8FA093",
-        danger: "#D9695A",
+        base: "#08110D",
+        surface: "#101C15",
+        elevated: "#17271D",
+        line: "#26382C",
+        turf: "#A3E635",
+        turfdim: "#52752D",
+        gold: "#F4C96B",
+        ink: "#F4F7F1",
+        muted: "#91A397",
+        danger: "#F07868",
       },
       fontFamily: {
         display: ["Oswald_500Medium"],
