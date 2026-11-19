@@ -13,45 +13,51 @@ const ICONS: Record<string, typeof Shirt> = {
 
 const LABELS: Record<string, string> = {
   Squad: "Squad",
-  Transfers: "Transfers",
+  Transfers: "Market",
   Fixtures: "Fixtures",
-  League: "My League",
+  League: "Leagues",
 };
 
 export function TabBar({ state, navigation }: BottomTabBarProps) {
   return (
-    <View
-      className="flex-row border-t"
-      style={{ backgroundColor: colors.base, borderTopColor: colors.line }}
-    >
-      {state.routes.map((route, index) => {
-        const isActive = state.index === index;
-        const Icon = ICONS[route.name] ?? Shirt;
-        const tint = isActive ? colors.turf : colors.muted;
-        return (
-          <Pressable
-            key={route.key}
-            onPress={() => navigation.navigate(route.name)}
-            className="flex-1 items-center pt-2.5 pb-2"
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isActive }}
-            accessibilityLabel={LABELS[route.name] ?? route.name}
-          >
-            <View
-              className="items-center justify-center mb-1"
-              style={{ height: 22, width: 34, borderTopWidth: isActive ? 2 : 0, borderTopColor: colors.turf, paddingTop: isActive ? 2 : 0 }}
+    <View className="px-4 pt-2 pb-2" style={{ backgroundColor: colors.base }}>
+      <View
+        className="flex-row items-center rounded-[22px] p-1.5 border"
+        style={{
+          backgroundColor: colors.surface,
+          borderColor: colors.line,
+          shadowColor: "#000",
+          shadowOpacity: 0.22,
+          shadowRadius: 14,
+          shadowOffset: { width: 0, height: -4 },
+          elevation: 12,
+        }}
+      >
+        {state.routes.map((route, index) => {
+          const isActive = state.index === index;
+          const Icon = ICONS[route.name] ?? Shirt;
+          const tint = isActive ? colors.base : colors.muted;
+          return (
+            <Pressable
+              key={route.key}
+              onPress={() => navigation.navigate(route.name)}
+              className="flex-1 items-center justify-center rounded-2xl py-2.5"
+              style={{ backgroundColor: isActive ? colors.turf : "transparent" }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              accessibilityLabel={LABELS[route.name] ?? route.name}
             >
-              <Icon size={18} strokeWidth={1.7} color={tint} />
-            </View>
-            <Text
-              className="text-[10px] font-body"
-              style={{ color: tint }}
-            >
-              {LABELS[route.name] ?? route.name}
-            </Text>
-          </Pressable>
-        );
-      })}
+              <Icon size={19} strokeWidth={isActive ? 2.4 : 1.8} color={tint} />
+              <Text
+                className="text-[10px] mt-1"
+                style={{ color: tint, fontFamily: isActive ? "Vazirmatn_700Bold" : "Vazirmatn_500Medium" }}
+              >
+                {LABELS[route.name] ?? route.name}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
