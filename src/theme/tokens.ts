@@ -1,27 +1,25 @@
 import { League } from "@/types";
 
-// Kept in sync with tailwind.config.js `theme.extend.colors`.
-// Use these when a color is needed in JS (e.g. icon `color` props),
-// use the Tailwind classes (bg-surface, text-ink, etc.) everywhere else.
+// Shared visual language for the fantasy matchday experience.
 export const colors = {
-  base: "#0D1512",
-  surface: "#141F19",
-  elevated: "#1B2A21",
-  line: "#28372C",
-  turf: "#79B34C",
-  turfDim: "#3E5A34",
-  gold: "#E3B34B",
-  ink: "#F3F4EE",
-  muted: "#8FA093",
-  danger: "#D9695A",
+  base: "#08110D",
+  surface: "#101C15",
+  elevated: "#17271D",
+  line: "#26382C",
+  turf: "#A3E635",
+  turfDim: "#52752D",
+  gold: "#F4C96B",
+  ink: "#F4F7F1",
+  muted: "#91A397",
+  danger: "#F07868",
 };
 
 export const LEAGUES: League[] = [
-  { id: "epl", label: "Premier League", color: "#3D195B" },
-  { id: "laliga", label: "La Liga", color: "#EE8707" },
-  { id: "seriea", label: "Serie A", color: "#0068A8" },
-  { id: "bundesliga", label: "Bundesliga", color: "#D3010C" },
-  { id: "ligue1", label: "Ligue 1", color: "#DAE025" },
+  { id: "epl", label: "Premier League", color: "#8B5CF6" },
+  { id: "laliga", label: "La Liga", color: "#F59E0B" },
+  { id: "seriea", label: "Serie A", color: "#38BDF8" },
+  { id: "bundesliga", label: "Bundesliga", color: "#F87171" },
+  { id: "ligue1", label: "Ligue 1", color: "#D9E65B" },
 ];
 
 export const leagueColor = (id: string): string =>
